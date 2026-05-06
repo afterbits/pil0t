@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PiL0t — Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#1ec024;--green-dim:#0d6e10;--green-bright:#4fff55;
+  --green-glow:rgba(30,192,36,0.15);
+  --bg:#050a05;--bg2:#080f08;--bg3:#0c160c;
+  --border:rgba(30,192,36,0.2);--border-hi:rgba(30,192,36,0.55);
+  --text:#a8d4a9;--dim:#4a7a4b;
+  --red:#ff4444;--amber:#ffaa00;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;overflow-x:hidden;padding:20px 0;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:0;}
+.scanline{position:fixed;top:-100%;left:0;right:0;height:40px;background:linear-gradient(transparent,rgba(30,192,36,0.05),transparent);animation:scan 7s linear infinite;pointer-events:none;z-index:0;}
+@keyframes scan{0%{top:-5%}100%{top:105%}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.wizard{width:100%;max-width:520px;padding:24px;position:relative;z-index:1;}
+.step{display:none;animation:fadeIn 0.3s ease both;}
+.step.active{display:block;}
+.progress{display:flex;gap:8px;justify-content:center;margin-bottom:28px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);transition:all 0.3s;}
+.dot.done{background:var(--green-dim);border-color:var(--green-dim);}
+.dot.active{background:var(--green);border-color:var(--green);box-shadow:0 0 8px rgba(30,192,36,0.5);}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:32px 28px;}
+.logo{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--green);
+  letter-spacing:0.15em;text-shadow:0 0 24px rgba(30,192,36,0.45);text-align:center;margin-bottom:6px;}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);
+  text-align:center;letter-spacing:0.15em;margin-bottom:28px;}
+.step-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--green);letter-spacing:0.15em;margin-bottom:4px;}
+.step-num{font-size:10px;color:var(--dim);letter-spacing:0.1em;margin-bottom:20px;}
+.body-text{font-size:12px;color:var(--text);line-height:1.8;margin-bottom:20px;}
+.body-text b{color:var(--green);}
+.feat{list-style:none;margin-bottom:24px;}
+.feat li{font-size:11px;color:var(--dim);padding:5px 0;border-bottom:1px solid rgba(30,192,36,0.06);
+  display:flex;align-items:center;gap:10px;}
+.feat li:last-child{border-bottom:none;}
+.feat li::before{content:'▶';font-size:8px;color:var(--green-dim);flex-shrink:0;}
+.field-label{font-size:10px;color:var(--dim);letter-spacing:0.1em;margin-bottom:6px;margin-top:16px;}
+input[type=password],input[type=text]{width:100%;background:var(--bg);border:1px solid var(--border);
+  color:var(--green-bright);font-family:'Share Tech Mono',monospace;font-size:13px;
+  padding:9px 12px;outline:none;border-radius:1px;transition:border-color 0.15s;}
+input:focus{border-color:var(--green);box-shadow:0 0 6px rgba(30,192,36,0.1);}
+.pw-strength{height:2px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden;}
+.pw-fill{height:100%;width:0%;border-radius:2px;transition:width 0.3s,background 0.3s;}
+.pw-hint{font-size:10px;color:var(--dim);margin-top:4px;min-height:14px;letter-spacing:0.04em;}
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
+.choice-card{background:var(--bg);border:1px solid var(--border);border-radius:2px;
+  padding:18px 14px;cursor:pointer;transition:all 0.2s;text-align:center;}
+.choice-card:hover{border-color:var(--green);background:var(--green-glow);}
+.choice-card.selected{border-color:var(--green);background:var(--green-glow);box-shadow:0 0 12px rgba(30,192,36,0.1);}
+.choice-icon{font-size:28px;margin-bottom:10px;display:block;line-height:1;}
+.choice-title{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;
+  color:var(--green);letter-spacing:0.1em;margin-bottom:6px;}
+.choice-desc{font-size:10px;color:var(--dim);line-height:1.6;}
+.choice-card.selected .choice-desc{color:var(--text);}
+.preview-box{background:var(--bg);border:1px solid var(--border);padding:12px 16px;
+  margin:12px 0;border-radius:1px;display:flex;align-items:center;gap:10px;}
+.preview-logo{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;
+  color:var(--green);letter-spacing:0.15em;white-space:nowrap;}
+.preview-sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);}
+.skip-link{text-align:center;margin-top:14px;font-size:11px;color:var(--dim);}
+.skip-link a{color:var(--dim);text-decoration:none;letter-spacing:0.06em;cursor:pointer;}
+.skip-link a:hover{color:var(--green);}
+.btn-row{display:flex;gap:10px;margin-top:24px;}
+.btn{flex:1;padding:11px 16px;background:transparent;border:1px solid var(--border);
+  color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:12px;
+  cursor:pointer;letter-spacing:0.08em;transition:all 0.15s;border-radius:1px;}
+.btn:hover{border-color:var(--green);color:var(--green);}
+.btn.primary{border-color:var(--green-dim);color:var(--green);}
+.btn.primary:hover{background:rgba(30,192,36,0.15);border-color:var(--green-bright);}
+.err{font-size:11px;color:var(--red);margin-top:10px;min-height:16px;letter-spacing:0.04em;}
+.success-icon{font-size:48px;text-align:center;display:block;margin-bottom:16px;}
+.success-title{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;
+  color:var(--green);letter-spacing:0.15em;text-align:center;margin-bottom:8px;
+  text-shadow:0 0 20px rgba(30,192,36,0.4);}
+.success-sub{font-size:11px;color:var(--dim);text-align:center;letter-spacing:0.06em;line-height:1.7;margin-bottom:24px;}
+.cursor::after{content:'█';animation:blink 1s infinite;color:var(--green);}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="wizard">
+  <div class="progress">
+    <div class="dot active" id="dot-0"></div>
+    <div class="dot" id="dot-1"></div>
+    <div class="dot" id="dot-2"></div>
+    <div class="dot" id="dot-3"></div>
+    <div class="dot" id="dot-4"></div>
+  </div>
+
+  <!-- Step 0: Welcome -->
+  <div class="step active" id="step-0">
+    <div class="panel">
+      <div class="logo">PiL0t</div>
+      <div class="logo-sub">FIRST TIME SETUP<span class="cursor"></span></div>
+      <p class="body-text">Welcome. You are setting up <b>PiL0t</b> — a lightweight management console built specifically for Raspberry Pi.</p>
+      <ul class="feat">
+        <li>Live system monitoring — CPU, memory, disk, temperature</li>
+        <li>ZPL label printing via network or USB</li>
+        <li>Physical USB keypad support for hands-free printing</li>
+        <li>Browser-based terminal, file browser, and WiFi manager</li>
+        <li>Multi-user authentication with session control</li>
+      </ul>
+      <p class="body-text" style="font-size:11px;color:var(--dim);">This wizard takes about 60 seconds. Press Next to begin.</p>
+      <div class="btn-row"><button class="btn primary" onclick="goTo(1)">NEXT ›</button></div>
+    </div>
+  </div>
+
+  <!-- Step 1: Admin Password -->
+  <div class="step" id="step-1">
+    <div class="panel">
+      <div class="step-title">ADMIN PASSWORD</div>
+      <div class="step-num">STEP 1 OF 3</div>
+      <p class="body-text">Set the password for the <b>admin</b> account. This replaces the default <b>admin / admin</b> credentials.</p>
+      <div class="field-label">NEW PASSWORD</div>
+      <input type="password" id="pw1" placeholder="Enter password">
+      <div class="pw-strength"><div class="pw-fill" id="pw-fill"></div></div>
+      <div class="pw-hint" id="pw-hint"></div>
+      <div class="field-label">CONFIRM PASSWORD</div>
+      <input type="password" id="pw2" placeholder="Confirm password">
+      <div class="err" id="pw-err"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="goTo(0)">‹ BACK</button>
+        <button class="btn primary" onclick="nextFromPassword()">NEXT ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Device Purpose -->
+  <div class="step" id="step-2">
+    <div class="panel">
+      <div class="step-title">DEVICE PURPOSE</div>
+      <div class="step-num">STEP 2 OF 3</div>
+      <p class="body-text">How will you primarily use this Pi?</p>
+      <div class="choice-grid">
+        <div class="choice-card selected" id="card-standard" onclick="selectMode('standard')">
+          <span class="choice-icon">⚙️</span>
+          <div class="choice-title">STANDARD</div>
+          <div class="choice-desc">General Pi management. The print interface will be hidden until configured.</div>
+        </div>
+        <div class="choice-card" id="card-zebra" onclick="selectMode('zebra')">
+          <span class="choice-icon">🏷️</span>
+          <div class="choice-title">PRINT SERVER</div>
+          <div class="choice-desc">Using a Zebra or ZPL-compatible label printer. Show the full print interface.</div>
+        </div>
+      </div>
+      <div class="err" id="mode-err"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="goTo(1)">‹ BACK</button>
+        <button class="btn primary" onclick="nextFromMode()">NEXT ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Branding -->
+  <div class="step" id="step-3">
+    <div class="panel">
+      <div class="step-title">APP BRANDING</div>
+      <div class="step-num">STEP 3 OF 3</div>
+      <p class="body-text">Customise the name shown in the header. Defaults are set based on your device type — change them or skip to keep the defaults.</p>
+      <div class="field-label">TITLE</div>
+      <input type="text" id="brand-title" placeholder="PiL0t" maxlength="40">
+      <div class="field-label">SUBTITLE</div>
+      <input type="text" id="brand-subtitle" placeholder="PRINT SERVER" maxlength="60">
+      <div class="preview-box">
+        <span class="preview-logo" id="prev-title">PiL0t</span>
+        <span class="preview-sub" id="prev-sub">PRINT SERVER</span>
+      </div>
+      <div class="err" id="brand-err"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="goTo(2)">‹ BACK</button>
+        <button class="btn primary" onclick="finishSetup(false)">FINISH SETUP</button>
+      </div>
+      <div class="skip-link"><a onclick="finishSetup(true)">Skip — use defaults</a></div>
+    </div>
+  </div>
+
+  <!-- Step 4: Done -->
+  <div class="step" id="step-4">
+    <div class="panel">
+      <span class="success-icon">✓</span>
+      <div class="success-title">SETUP COMPLETE</div>
+      <div class="success-sub">PiL0t is ready.<br>Log in with your new admin password to get started.</div>
+      <div class="btn-row"><button class="btn primary" onclick="location.href='/login'">GO TO LOGIN ›</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+let _mode = 'standard';
+let _password = '';
+
+function goTo(n) {
+  document.querySelectorAll('.step').forEach((s,i) => s.classList.toggle('active', i===n));
+  document.querySelectorAll('.dot').forEach((d,i) => {
+    d.classList.toggle('active', i===n);
+    d.classList.toggle('done', i<n);
+  });
+  window.scrollTo(0,0);
+  if(n===1) setTimeout(()=>{ const el=document.getElementById('pw1'); if(el) el.focus(); },50);
+}
+
+function checkStrength() {
+  const pw = document.getElementById('pw1').value;
+  const fill = document.getElementById('pw-fill');
+  const hint = document.getElementById('pw-hint');
+  if(!pw){ fill.style.width='0'; hint.textContent=''; return; }
+  let score=0;
+  if(pw.length>=6)  score++;
+  if(pw.length>=10) score++;
+  if(/[A-Z]/.test(pw)) score++;
+  if(/[0-9]/.test(pw)) score++;
+  if(/[^A-Za-z0-9]/.test(pw)) score++;
+  fill.style.width=Math.min(100,score*20)+'%';
+  if(score<=1)      {fill.style.background='var(--red)';   hint.textContent='Too short';}
+  else if(score<=2) {fill.style.background='var(--amber)'; hint.textContent='Weak';}
+  else if(score<=3) {fill.style.background='var(--amber)'; hint.textContent='Moderate';}
+  else if(score<=4) {fill.style.background='var(--green)'; hint.textContent='Strong';}
+  else              {fill.style.background='var(--green)'; hint.textContent='Very strong';}
+}
+
+function nextFromPassword() {
+  const pw1=document.getElementById('pw1').value;
+  const pw2=document.getElementById('pw2').value;
+  const err=document.getElementById('pw-err');
+  err.textContent='';
+  if(!pw1)            {err.textContent='Password required';return;}
+  if(pw1.length<6)    {err.textContent='Minimum 6 characters';return;}
+  if(pw1!==pw2)       {err.textContent='Passwords do not match';return;}
+  _password=pw1;
+  goTo(2);
+}
+
+function selectMode(mode) {
+  _mode=mode;
+  document.getElementById('card-standard').classList.toggle('selected',mode==='standard');
+  document.getElementById('card-zebra').classList.toggle('selected',mode==='zebra');
+}
+
+function nextFromMode() {
+  const isZebra=(_mode==='zebra');
+  const defaultSub=isZebra?'PRINT SERVER':'DEVICE MANAGEMENT';
+  const titleEl=document.getElementById('brand-title');
+  const subEl=document.getElementById('brand-subtitle');
+  if(!titleEl.value) titleEl.value='PiL0t';
+  subEl.value=defaultSub;
+  updateBrandPreview();
+  goTo(3);
+}
+
+function updateBrandPreview() {
+  document.getElementById('prev-title').textContent=document.getElementById('brand-title').value||'PiL0t';
+  document.getElementById('prev-sub').textContent=document.getElementById('brand-subtitle').value||'';
+}
+
+async function finishSetup(skipBranding) {
+  const err=document.getElementById('brand-err');
+  const isZebra=(_mode==='zebra');
+  const title=skipBranding?'PiL0t':(document.getElementById('brand-title').value.trim()||'PiL0t');
+  const sub=skipBranding?(isZebra?'PRINT SERVER':'DEVICE MANAGEMENT'):(document.getElementById('brand-subtitle').value.trim()||(isZebra?'PRINT SERVER':'DEVICE MANAGEMENT'));
+  err.textContent='Saving...';
+  try {
+    await fetch('/api/branding',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,subtitle:sub})});
+    const r=await fetch('/api/setup/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:_password,zebra_mode:isZebra})});
+    const d=await r.json();
+    if(d.ok){goTo(4);}
+    else{err.textContent=d.error||'Setup failed — try again';}
+  } catch(e){err.textContent='Connection error — try again';}
+}
+
+document.getElementById('pw1').addEventListener('input',checkStrength);
+document.getElementById('pw1').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('pw2').focus();});
+document.getElementById('pw2').addEventListener('keydown',function(e){if(e.key==='Enter')nextFromPassword();});
+document.getElementById('brand-title').addEventListener('input',updateBrandPreview);
+document.getElementById('brand-subtitle').addEventListener('input',updateBrandPreview);
+</script>
+</body>
+</html>

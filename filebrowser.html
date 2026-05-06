@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PiL0t — Files</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:#1ec024; --green-dim:#0d6e10; --green-bright:#4fff55;
+  --green-glow:rgba(30,192,36,0.15); --green-glow2:rgba(30,192,36,0.08);
+  --bg:#050a05; --bg2:#080f08; --bg3:#0c160c;
+  --border:rgba(30,192,36,0.2); --border-hi:rgba(30,192,36,0.55);
+  --text:#a8d4a9; --dim:#4a7a4b;
+  --red:#ff4444; --amber:#ffaa00;
+  --header-h:52px;
+  --snav-h:40px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;display:flex;flex-direction:column;overflow:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:0;}
+.scanline{position:fixed;top:-100%;left:0;right:0;height:40px;background:linear-gradient(transparent,rgba(30,192,36,0.05),transparent);animation:scan 7s linear infinite;pointer-events:none;z-index:0;}
+@keyframes scan{0%{top:-5%}100%{top:105%}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Header — identical to other pages ── */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:var(--header-h);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:200;}
+.logo{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;color:var(--green);letter-spacing:0.15em;text-shadow:0 0 18px rgba(30,192,36,0.45);text-decoration:none;}
+.logo-sub{color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:400;margin-left:10px;letter-spacing:0.05em;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.hdr-btn{padding:5px 10px;border:1px solid var(--border);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;text-decoration:none;transition:all 0.15s;background:transparent;cursor:pointer;letter-spacing:0.04em;white-space:nowrap;border-radius:1px;}
+.hdr-btn:hover{border-color:var(--green);color:var(--green);}
+
+/* ── Section nav — sticky below header ── */
+.snav{background:var(--bg3);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;padding:0 20px;height:var(--snav-h);flex-shrink:0;z-index:190;scrollbar-width:none;}
+.snav::-webkit-scrollbar{display:none;}
+.snav a{padding:0 14px;height:var(--snav-h);background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:0.06em;transition:color 0.15s,border-color 0.15s;white-space:nowrap;text-decoration:none;display:flex;align-items:center;}
+.snav a:hover{color:var(--text);}
+.snav a.active{color:var(--green);border-bottom-color:var(--green);pointer-events:none;}
+
+/* ── Main — fills remaining space ── */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px 24px;min-height:0;}
+.main::-webkit-scrollbar{width:4px;} .main::-webkit-scrollbar-thumb{background:var(--green-dim);}
+
+/* ── Panel ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:2px;overflow:hidden;animation:fadeIn 0.35s ease both;display:flex;flex-direction:column;}
+.ph{background:var(--bg3);border-bottom:1px solid var(--border);padding:0 14px;height:36px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--green);letter-spacing:0.12em;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.ph-l{display:flex;align-items:center;gap:6px;}
+.ph-l::before{content:'▶';font-size:7px;color:var(--green-dim);}
+
+/* ── Toolbar ── */
+.file-toolbar{padding:8px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.breadcrumb{flex:1;background:var(--bg);border:1px solid var(--border);padding:4px 10px;font-size:12px;color:var(--dim);display:flex;align-items:center;overflow-x:auto;min-width:80px;border-radius:1px;}
+.breadcrumb::-webkit-scrollbar{height:2px;} .breadcrumb::-webkit-scrollbar-thumb{background:var(--green-dim);}
+.bc-part{color:var(--dim);cursor:pointer;padding:0 2px;white-space:nowrap;transition:color 0.1s;}
+.bc-part:hover{color:var(--green);}
+.bc-sep{color:var(--green-dim);padding:0 2px;}
+.bc-cur{color:var(--green);white-space:nowrap;}
+
+/* ── Inline buttons ── */
+.ibtn{padding:5px 11px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s;white-space:nowrap;border-radius:1px;flex-shrink:0;}
+.ibtn:hover{border-color:var(--green);color:var(--green);background:var(--green-glow);}
+.ibtn.primary{border-color:var(--green-dim);color:var(--green);}
+.ibtn.primary:hover{background:rgba(30,192,36,0.15);}
+.ibtn:disabled{opacity:0.3;cursor:not-allowed;}
+.toggle-hidden{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);cursor:pointer;user-select:none;white-space:nowrap;}
+.toggle-hidden input{accent-color:var(--green);}
+
+/* ── Batch bar ── */
+.batch-bar{display:none;padding:7px 14px;align-items:center;gap:10px;font-size:12px;border-bottom:1px solid var(--border);background:var(--bg3);flex-shrink:0;}
+.batch-bar.show{display:flex;}
+
+/* ── File table ── */
+.file-wrap{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;}
+.file-wrap::-webkit-scrollbar{width:4px;} .file-wrap::-webkit-scrollbar-track{background:var(--bg);}
+.file-wrap::-webkit-scrollbar-thumb{background:var(--green-dim);}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+thead tr{background:var(--bg3);position:sticky;top:0;z-index:5;}
+th{padding:7px 12px;text-align:left;color:var(--dim);font-weight:400;font-size:10px;border-bottom:1px solid var(--border);letter-spacing:0.06em;cursor:pointer;user-select:none;}
+th:hover{color:var(--green);}
+th.sorted{color:var(--green);}
+th.sorted::after{content:' ▼';font-size:8px;}
+th.sorted.asc::after{content:' ▲';}
+.col-chk{width:32px;} .col-name{width:40%;} .col-size{width:80px;text-align:right;}
+.col-date{width:130px;} .col-perms{width:100px;} .col-act{width:100px;}
+tr.file-row{border-bottom:1px solid rgba(30,192,36,0.06);transition:background 0.1s;cursor:pointer;}
+tr.file-row:hover{background:rgba(30,192,36,0.04);}
+td{padding:6px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;}
+.file-icon{margin-right:6px;color:var(--green-dim);}
+.fn{color:var(--text);} .fn.dir{color:var(--green);font-weight:500;} .fn.lnk{color:var(--amber);} .fn.hid{color:var(--dim);}
+tr.file-row:hover .fn{color:var(--green-bright);}
+.fsize{color:var(--dim);text-align:right;} .fdate{color:var(--dim);font-size:11px;}
+.fperms{color:var(--dim);font-size:10px;}
+.row-acts{display:flex;gap:4px;opacity:0;transition:opacity 0.15s;}
+tr.file-row:hover .row-acts{opacity:1;}
+.ract{padding:2px 7px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.12s;}
+.ract:hover{border-color:var(--green);color:var(--green);}
+.ract.del:hover{border-color:var(--red);color:var(--red);}
+.empty-msg{text-align:center;color:var(--dim);padding:40px 20px;font-size:12px;letter-spacing:0.05em;}
+
+/* ── Status bar ── */
+.statusbar{padding:6px 14px;font-size:10px;color:var(--dim);display:flex;justify-content:space-between;border-top:1px solid var(--border);background:var(--bg3);flex-shrink:0;}
+
+/* ── Upload progress ── */
+.upload-bar{height:3px;background:var(--bg3);display:none;flex-shrink:0;}
+.upload-bar.show{display:block;}
+.upload-fill{height:100%;background:var(--green);width:0%;transition:width 0.3s;}
+
+/* ── Drop overlay ── */
+.drop-overlay{display:none;position:fixed;inset:0;background:rgba(5,10,5,0.92);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px;border:3px dashed var(--green);pointer-events:none;}
+.drop-overlay.active{display:flex;}
+
+/* ── Modals ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;pointer-events:none;}
+.modal-bg.show{display:flex;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--border-hi);padding:22px;min-width:320px;max-width:90vw;border-radius:2px;}
+.modal h2{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--green);letter-spacing:0.1em;margin-bottom:14px;}
+.modal input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--green-bright);font-family:'Share Tech Mono',monospace;font-size:13px;padding:7px 10px;outline:none;margin-bottom:12px;border-radius:1px;}
+.modal input:focus{border-color:var(--green);}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:28vh;left:50%;transform:translateX(-50%) translateY(8px);padding:9px 20px;background:var(--bg3);border:1px solid var(--border);font-size:12px;color:var(--green);opacity:0;transition:opacity 0.2s,transform 0.2s;z-index:300;text-align:center;white-space:nowrap;border-radius:1px;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.error{border-color:rgba(255,68,68,0.5);color:var(--red);}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="drop-overlay" id="drop-overlay">
+  <div style="font-size:36px;color:var(--green)">⬇</div>
+  <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--green);letter-spacing:0.15em;">DROP TO UPLOAD</div>
+</div>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════════════════ -->
+<header>
+  <a class="logo" href="/">PiL0t <span class="logo-sub" id="header-sub">FILE BROWSER</span></a>
+  <div class="hdr-right">
+    <a href="/system" class="hdr-btn">‹ SYSTEM</a>
+    <a href="/" class="hdr-btn">‹ PRINT</a>
+    <button class="hdr-btn" id="logout-btn" style="display:none;">⏻ LOGOUT</button>
+  </div>
+</header>
+
+<!-- ══ SECTION NAV ══════════════════════════════════════════════════════════ -->
+<nav class="snav">
+  <a href="/system" onclick="goSection('s-perf')">PERFORMANCE</a>
+  <a href="/system" onclick="goSection('s-info')">SYSTEM INFO</a>
+  <a href="/system" onclick="goSection('s-diag')">DIAGNOSTICS</a>
+  <a href="/system" onclick="goSection('s-logs')">LOGS</a>
+  <a href="/system" onclick="goSection('s-wifi')">WIFI</a>
+  <a href="/system" onclick="goSection('s-project')">PROJECT TOOLS</a>
+  <a href="/system" onclick="goSection('s-auth')">AUTH</a>
+  <a href="/system" onclick="goSection('s-maint')">MAINTENANCE</a>
+  <a href="/system" onclick="goSection('s-term')">TERMINAL</a>
+  <a href="#" class="active">FILE BROWSER</a>
+</nav>
+
+<!-- ══ MAIN ════════════════════════════════════════════════════════════════ -->
+<div class="main">
+  <div class="panel" style="height:calc(100vh - var(--header-h) - var(--snav-h) - 40px);">
+    <div class="ph">
+      <div class="ph-l">FILE SYSTEM BROWSER</div>
+      <span id="status-left" style="font-size:10px;color:var(--dim);font-family:'Share Tech Mono',monospace;font-weight:400;letter-spacing:0;">READY</span>
+    </div>
+
+    <div class="file-toolbar">
+      <button class="ibtn" id="btn-up" onclick="goUp()">↑ UP</button>
+      <div class="breadcrumb" id="breadcrumb">/</div>
+      <button class="ibtn primary" onclick="showMkdir()">+ FOLDER</button>
+      <label class="ibtn primary" style="cursor:pointer;">↑ UPLOAD<input type="file" id="upload-input" multiple style="display:none" onchange="uploadFiles(this.files)"></label>
+      <label class="toggle-hidden"><input type="checkbox" id="show-hidden" onchange="render()"> HIDDEN</label>
+    </div>
+
+    <div class="batch-bar" id="batch-bar">
+      <span style="color:var(--green);font-size:11px;" id="batch-count">0 selected</span>
+      <button class="ibtn" style="border-color:rgba(255,68,68,0.4);color:#ff8888;" onclick="batchDelete()">DELETE SELECTED</button>
+      <button class="ibtn" onclick="clearSelection()">CLEAR</button>
+    </div>
+
+    <div class="file-wrap">
+      <table>
+        <thead><tr>
+          <th class="col-chk"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" style="accent-color:var(--green);cursor:pointer;"></th>
+          <th class="col-name sorted asc" id="th-name" onclick="sortBy('name')">NAME</th>
+          <th class="col-size" id="th-size" onclick="sortBy('size')">SIZE</th>
+          <th class="col-date" id="th-date" onclick="sortBy('modified')">MODIFIED</th>
+          <th class="col-perms">PERMISSIONS</th>
+          <th class="col-act"></th>
+        </tr></thead>
+        <tbody id="file-tbody"><tr><td colspan="6"><div class="empty-msg">LOADING...</div></td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="upload-bar" id="upload-bar"><div class="upload-fill" id="upload-fill"></div></div>
+    <div class="statusbar">
+      <span id="status-items">--</span>
+      <span id="status-right" style="color:var(--dim);"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-bg" id="rename-modal"><div class="modal">
+  <h2>RENAME</h2>
+  <input type="text" id="rename-input" placeholder="New name">
+  <div class="modal-btns">
+    <button class="ibtn" onclick="closeModal('rename-modal')">CANCEL</button>
+    <button class="ibtn primary" onclick="confirmRename()">RENAME</button>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="mkdir-modal"><div class="modal">
+  <h2>NEW FOLDER</h2>
+  <input type="text" id="mkdir-input" placeholder="Folder name">
+  <div class="modal-btns">
+    <button class="ibtn" onclick="closeModal('mkdir-modal')">CANCEL</button>
+    <button class="ibtn primary" onclick="confirmMkdir()">CREATE</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+var currentPath = '/home/sysadmin';
+var entries = [], sortKey = 'name', sortAsc = true, renamePath = null;
+
+function toast(msg, isErr) {
+  var el = document.getElementById('toast');
+  el.textContent = (isErr ? '✗ ' : '✓ ') + msg;
+  el.className = 'toast show' + (isErr ? ' error' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.className = 'toast'; }, 3000);
+}
+
+function fmtSize(b) {
+  if (!b) return '0 B';
+  var k=1024, s=['B','KB','MB','GB','TB'], i=Math.floor(Math.log(b)/Math.log(k));
+  return (b/Math.pow(k,i)).toFixed(i?1:0)+' '+s[i];
+}
+
+function fileIcon(e) {
+  if (e.is_link) return '⇢';
+  if (e.is_dir)  return '▶';
+  var ext = e.name.split('.').pop().toLowerCase();
+  var m = {py:'⌨',js:'⌨',ts:'⌨',sh:'⌨',html:'⌨',css:'⌨',json:'⌨',txt:'≡',md:'≡',log:'≡',conf:'≡',jpg:'▣',png:'▣',gif:'▣',zip:'◈',gz:'◈',tar:'◈'};
+  return m[ext] || '·';
+}
+
+function buildBreadcrumb(path) {
+  var bc = document.getElementById('breadcrumb');
+  var parts = path === '/' ? [''] : path.split('/');
+  var html = '', built = '';
+  for (var i = 0; i < parts.length; i++) {
+    built = i === 0 ? '/' : (built === '/' ? '/'+parts[i] : built+'/'+parts[i]);
+    var label = i === 0 ? '/' : parts[i];
+    var isLast = i === parts.length - 1;
+    if (isLast) {
+      html += '<span class="bc-cur">'+label+'</span>';
+    } else {
+      html += '<span class="bc-part" data-path="'+built+'">'+label+'</span><span class="bc-sep">/</span>';
+    }
+  }
+  bc.innerHTML = html;
+  bc.querySelectorAll('.bc-part').forEach(function(el){
+    el.addEventListener('click', function(){ load(el.dataset.path); });
+  });
+  bc.scrollLeft = bc.scrollWidth;
+}
+
+function sortBy(key) {
+  sortAsc = sortKey === key ? !sortAsc : true;
+  sortKey = key;
+  document.querySelectorAll('thead th').forEach(function(th){ th.className = th.className.replace(' sorted','').replace(' asc','').replace(' desc',''); });
+  var thId = key === 'name' ? 'th-name' : key === 'size' ? 'th-size' : 'th-date';
+  var th = document.getElementById(thId);
+  if (th) th.className += ' sorted ' + (sortAsc ? 'asc' : 'desc');
+  render();
+}
+
+function render() {
+  var showHidden = document.getElementById('show-hidden').checked;
+  var list = entries.filter(function(e){ return showHidden || !e.name.startsWith('.'); });
+  list.sort(function(a,b){
+    if (a.is_dir !== b.is_dir) return a.is_dir ? -1 : 1;
+    var av = sortKey==='size' ? (parseInt(a.size)||0) : (sortKey==='modified' ? a.modified : a.name.toLowerCase());
+    var bv = sortKey==='size' ? (parseInt(b.size)||0) : (sortKey==='modified' ? b.modified : b.name.toLowerCase());
+    return sortAsc ? (av<bv?-1:av>bv?1:0) : (av>bv?-1:av<bv?1:0);
+  });
+
+  var tbody = document.getElementById('file-tbody');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-msg">EMPTY DIRECTORY</div></td></tr>';
+    return;
+  }
+
+  var rows = '';
+  list.forEach(function(e) {
+    var nc = e.is_dir ? 'dir' : e.is_link ? 'lnk' : e.name.startsWith('.') ? 'hid' : '';
+    var pe = encodeURIComponent(e.path);
+    var ne = e.name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    rows += '<tr class="file-row" data-path="'+pe+'" data-isdir="'+e.is_dir+'">';
+    rows += '<td class="col-chk" style="text-align:center"><input type="checkbox" class="row-check" data-path="'+pe+'" style="accent-color:var(--green);cursor:pointer;"></td>';
+    rows += '<td class="col-name"><span class="file-icon">'+fileIcon(e)+'</span><span class="fn '+nc+'">'+ne+'</span></td>';
+    rows += '<td class="fsize col-size">'+(e.is_dir?'—':fmtSize(e.size))+'</td>';
+    rows += '<td class="fdate col-date">'+e.modified+'</td>';
+    rows += '<td class="fperms col-perms">'+e.perms+'</td>';
+    rows += '<td class="col-act"><div class="row-acts">';
+    if (!e.is_dir) rows += '<button class="ract" data-dl="'+pe+'">↓ DL</button>';
+    rows += '<button class="ract" data-rename="'+pe+'" data-name="'+ne+'">✎</button>';
+    rows += '<button class="ract del" data-del="'+pe+'" data-isdir="'+e.is_dir+'">✕</button>';
+    rows += '</div></td></tr>';
+  });
+  tbody.innerHTML = rows;
+
+  tbody.querySelectorAll('tr.file-row').forEach(function(row) {
+    row.addEventListener('click', function(evt) {
+      if (evt.target.closest('.col-chk') || evt.target.closest('.row-acts')) return;
+      var anyChecked = tbody.querySelectorAll('.row-check:checked').length > 0;
+      if (anyChecked) { var cb=row.querySelector('.row-check'); if(cb){cb.checked=!cb.checked;onRowCheck();} return; }
+      if (row.dataset.isdir==='true') load(decodeURIComponent(row.dataset.path));
+    });
+    var cb = row.querySelector('.row-check');
+    if (cb) cb.addEventListener('change', onRowCheck);
+    var dl = row.querySelector('[data-dl]');
+    if (dl) dl.addEventListener('click', function(e){ e.stopPropagation(); var a=document.createElement('a');a.href=API+'/api/files/download?path='+dl.dataset.dl;a.click(); });
+    var ren = row.querySelector('[data-rename]');
+    if (ren) ren.addEventListener('click', function(e){ e.stopPropagation(); renamePath=decodeURIComponent(ren.dataset.rename); var inp=document.getElementById('rename-input');inp.value=ren.dataset.name;document.getElementById('rename-modal').classList.add('show');setTimeout(function(){inp.focus();inp.select();},50); });
+    var del = row.querySelector('[data-del]');
+    if (del) del.addEventListener('click', function(e){
+      e.stopPropagation();
+      var p=decodeURIComponent(del.dataset.del),n=p.split('/').pop(),isD=del.dataset.isdir==='true';
+      if(!confirm((isD?'Delete folder "'+n+'" and all contents?':'Delete "'+n+'"?'))) return;
+      fetch(API+'/api/files/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:p})})
+        .then(function(r){return r.json();}).then(function(d){d.ok?toast('Deleted'):toast(d.error,true);load(currentPath);});
+    });
+  });
+  var sa=document.getElementById('select-all'); if(sa){sa.checked=false;sa.indeterminate=false;}
+}
+
+async function load(path) {
+  document.getElementById('status-left').textContent = 'LOADING...';
+  try {
+    var r = await fetch(API+'/api/files/list?path='+encodeURIComponent(path));
+    var d = await r.json();
+    if (!d.ok) {
+      document.getElementById('file-tbody').innerHTML='<tr><td colspan="6"><div class="empty-msg" style="color:var(--red)">'+d.error+'</div></td></tr>';
+      document.getElementById('status-left').textContent='ERROR'; return;
+    }
+    currentPath=d.path; entries=d.entries||[];
+    document.getElementById('btn-up').disabled=!d.parent;
+    buildBreadcrumb(d.path); render();
+    document.getElementById('status-left').textContent='OK';
+    document.getElementById('status-items').textContent=entries.length+' ITEMS';
+    document.getElementById('status-right').textContent=currentPath;
+  } catch(e) {
+    document.getElementById('file-tbody').innerHTML='<tr><td colspan="6"><div class="empty-msg" style="color:var(--red)">'+e.message+'</div></td></tr>';
+    document.getElementById('status-left').textContent='ERROR';
+  }
+}
+
+function goUp(){ if(currentPath==='/') return; load(currentPath.split('/').slice(0,-1).join('/')||'/'); }
+
+function onRowCheck(){
+  var checked=document.querySelectorAll('.row-check:checked'),total=document.querySelectorAll('.row-check').length;
+  var sa=document.getElementById('select-all'),bar=document.getElementById('batch-bar'),cnt=document.getElementById('batch-count');
+  cnt.textContent=checked.length+' selected';
+  bar.classList.toggle('show',checked.length>0);
+  if(sa){sa.indeterminate=checked.length>0&&checked.length<total;sa.checked=total>0&&checked.length===total;}
+}
+function toggleSelectAll(cb){ document.querySelectorAll('.row-check').forEach(function(c){c.checked=cb.checked;}); onRowCheck(); }
+function clearSelection(){ document.querySelectorAll('.row-check').forEach(function(c){c.checked=false;}); var sa=document.getElementById('select-all');if(sa){sa.checked=false;sa.indeterminate=false;} onRowCheck(); }
+
+async function batchDelete(){
+  var checked=Array.from(document.querySelectorAll('.row-check:checked'));
+  if(!checked.length) return;
+  var names=checked.map(function(c){return decodeURIComponent(c.dataset.path).split('/').pop();});
+  if(!confirm('Delete '+checked.length+' item'+(checked.length>1?'s':'')+'?\n\n'+names.slice(0,5).join('\n')+(names.length>5?'\n...and '+(names.length-5)+' more':''))) return;
+  var ok=0,fail=0;
+  for(var i=0;i<checked.length;i++){
+    try{var r=await fetch(API+'/api/files/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:decodeURIComponent(checked[i].dataset.path)})});var d=await r.json();d.ok?ok++:fail++;}catch(e){fail++;}
+  }
+  toast('Deleted '+ok+(fail?' ('+fail+' failed)':''),fail>0);
+  clearSelection(); load(currentPath);
+}
+
+async function confirmRename(){
+  var name=document.getElementById('rename-input').value.trim();
+  if(!name||!renamePath) return;
+  var r=await fetch(API+'/api/files/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:renamePath,name:name})});
+  var d=await r.json(); closeModal('rename-modal');
+  d.ok?toast('Renamed'):toast(d.error,true); load(currentPath);
+}
+
+function showMkdir(){ document.getElementById('mkdir-input').value=''; document.getElementById('mkdir-modal').classList.add('show'); setTimeout(function(){document.getElementById('mkdir-input').focus();},50); }
+async function confirmMkdir(){
+  var name=document.getElementById('mkdir-input').value.trim(); if(!name) return;
+  var r=await fetch(API+'/api/files/mkdir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:currentPath,name:name})});
+  var d=await r.json(); closeModal('mkdir-modal');
+  d.ok?toast('Folder created'):toast(d.error,true); load(currentPath);
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('show'); renamePath=null; }
+
+async function uploadFiles(files){
+  if(!files.length) return;
+  var bar=document.getElementById('upload-bar'),fill=document.getElementById('upload-fill');
+  bar.classList.add('show'); fill.style.width='10%';
+  var fd=new FormData();
+  for(var i=0;i<files.length;i++) fd.append('files',files[i]);
+  var xhr=new XMLHttpRequest();
+  xhr.upload.onprogress=function(e){if(e.lengthComputable)fill.style.width=(e.loaded/e.total*90+10)+'%';};
+  xhr.onload=function(){
+    fill.style.width='100%';
+    setTimeout(function(){bar.classList.remove('show');fill.style.width='0%';},600);
+    try{var d=JSON.parse(xhr.responseText);d.ok?toast('Uploaded '+d.uploaded.length+' file(s)'):toast(d.error,true);}catch(e){toast('Upload complete');}
+    load(currentPath);
+  };
+  xhr.onerror=function(){toast('Upload failed',true);bar.classList.remove('show');};
+  xhr.open('POST',API+'/api/files/upload?path='+encodeURIComponent(currentPath));
+  xhr.send(fd);
+  document.getElementById('upload-input').value='';
+}
+
+// Drag and drop
+document.addEventListener('dragover',function(e){e.preventDefault();document.getElementById('drop-overlay').classList.add('active');});
+document.addEventListener('dragleave',function(e){if(!e.relatedTarget)document.getElementById('drop-overlay').classList.remove('active');});
+document.addEventListener('drop',function(e){e.preventDefault();document.getElementById('drop-overlay').classList.remove('active');if(e.dataTransfer.files.length)uploadFiles(e.dataTransfer.files);});
+
+// Keyboard shortcuts
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){closeModal('rename-modal');closeModal('mkdir-modal');}
+  if(e.key==='Enter'){if(document.getElementById('rename-modal').classList.contains('show'))confirmRename();if(document.getElementById('mkdir-modal').classList.contains('show'))confirmMkdir();}
+  if(e.key==='Backspace'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();goUp();}
+});
+
+// Auth
+fetch('/api/auth/me').then(function(r){return r.json();}).then(function(d){
+  var lb=document.getElementById('logout-btn');
+  if(d.ok&&lb) lb.style.display='';
+}).catch(function(){});
+document.getElementById('logout-btn').addEventListener('click',function(){
+  fetch('/api/auth/logout',{method:'POST'}).then(function(){location.href='/login';});
+});
+
+// Branding
+fetch('/api/branding').then(r=>r.json()).then(d=>{
+  if(!d.ok) return;
+  const sub=document.getElementById('header-sub');
+  if(sub&&d.subtitle) sub.textContent=d.subtitle+' — FILES';
+  if(d.title) document.title='PiL0t — Files';
+}).catch(()=>{});
+
+function goSection(id) {
+  sessionStorage.setItem('gotoSection', id);
+}
+
+load('/home/sysadmin');
+</script>
+</body>
+</html>

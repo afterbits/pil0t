@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PiL0t — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--green:#1ec024;--green-dim:#0d6e10;--green-bright:#4fff55;--green-glow:rgba(30,192,36,0.15);--bg:#050a05;--bg2:#080f08;--bg3:#0c160c;--border:rgba(30,192,36,0.25);--text:#a8d4a9;--dim:#4a7a4b;--red:#ff4444;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);pointer-events:none;z-index:10;}
+.scanline{position:fixed;top:-100%;left:0;right:0;height:40px;background:linear-gradient(transparent,rgba(30,192,36,0.04),transparent);animation:scan 6s linear infinite;pointer-events:none;z-index:9;}
+@keyframes scan{0%{top:-5%}100%{top:105%}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+.login-wrap{width:100%;max-width:400px;padding:24px;animation:fadeIn 0.4s ease;}
+.logo{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:var(--green);letter-spacing:0.15em;text-shadow:0 0 20px rgba(30,192,36,0.5);text-decoration:none;}
+.logo-sub{font-size:11px;color:var(--dim);text-align:center;letter-spacing:0.15em;margin-bottom:32px;}
+
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:28px;}
+.field-label{font-size:10px;color:var(--dim);letter-spacing:0.1em;margin-bottom:6px;}
+input[type=text],input[type=password]{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--green-bright);font-family:'Share Tech Mono',monospace;font-size:14px;padding:10px 12px;outline:none;border-radius:1px;transition:border-color 0.15s;margin-bottom:16px;}
+input:focus{border-color:var(--green);box-shadow:0 0 8px rgba(30,192,36,0.15);}
+.login-btn{width:100%;padding:12px;background:transparent;border:1px solid var(--green-dim);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:13px;cursor:pointer;letter-spacing:0.1em;transition:all 0.15s;border-radius:1px;margin-top:4px;}
+.login-btn:hover{background:rgba(30,192,36,0.15);border-color:var(--green-bright);color:var(--green-bright);}
+.login-btn:active{transform:scale(0.98);}
+.err-msg{color:var(--red);font-size:11px;text-align:center;margin-top:12px;min-height:16px;letter-spacing:0.05em;}
+.guest-link{text-align:center;margin-top:16px;font-size:11px;color:var(--dim);}
+.guest-link a{color:var(--green-dim);text-decoration:none;letter-spacing:0.05em;}
+.guest-link a:hover{color:var(--green);}
+.cursor::after{content:'█';animation:blink 1s infinite;color:var(--green);}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="login-wrap">
+  <div class="logo">SKU//PRINT</div>
+  <div class="logo-sub">AUTHENTICATION REQUIRED<span class="cursor"></span></div>
+  <div class="login-box">
+    <div class="field-label">USERNAME</div>
+    <input type="text" id="username" autocomplete="username" placeholder="username" onkeydown="if(event.key==='Enter')document.getElementById('password').focus()">
+    <div class="field-label">PASSWORD</div>
+    <input type="password" id="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">> LOGIN</button>
+    <div class="err-msg" id="err"></div>
+  </div>
+  <div class="guest-link" id="guest-link" style="display:none">
+    <a href="/">Access print page without login ›</a>
+  </div>
+</div>
+<script>
+async function doLogin() {
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  const err = document.getElementById('err');
+  if (!u || !p) { err.textContent = 'Username and password required'; return; }
+  err.textContent = '';
+  try {
+    const r = await fetch('/api/auth/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d = await r.json();
+    if (d.ok) {
+      const redir = new URLSearchParams(location.search).get('next') || '/system';
+      location.href = redir;
+    } else {
+      err.textContent = d.error || 'Login failed';
+      document.getElementById('password').value = '';
+    }
+  } catch(e) { err.textContent = 'Connection error'; }
+}
+
+// Check if guest print is allowed
+fetch('/api/auth/me').then(r=>r.json()).then(d=>{
+  if (!d.ok && d.guest_print) document.getElementById('guest-link').style.display = 'block';
+});
+
+document.getElementById('username').focus();
+// Show kicked message if redirected from a kick
+if (new URLSearchParams(location.search).get('kicked')) {
+  const err = document.getElementById('err');
+  err.textContent = '⚠ Your session was terminated by an administrator.';
+  err.style.color = 'var(--amber)';
+}
+</script>
+</body>
+</html>

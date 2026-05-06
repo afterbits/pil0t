@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PiL0t — System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — single source of truth for all pages
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --green:#1ec024; --green-dim:#0d6e10; --green-bright:#4fff55;
+  --green-glow:rgba(30,192,36,0.15); --green-glow2:rgba(30,192,36,0.08);
+  --bg:#050a05; --bg2:#080f08; --bg3:#0c160c;
+  --border:rgba(30,192,36,0.2); --border-hi:rgba(30,192,36,0.55);
+  --text:#a8d4a9; --dim:#4a7a4b;
+  --red:#ff4444; --amber:#ffaa00; --blue:#4499ff;
+  --header-h:52px;
+  --snav-h:40px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:0;}
+.scanline{position:fixed;top:-100%;left:0;right:0;height:40px;background:linear-gradient(transparent,rgba(30,192,36,0.05),transparent);animation:scan 7s linear infinite;pointer-events:none;z-index:0;}
+@keyframes scan{0%{top:-5%}100%{top:105%}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+/* ── Header ── */
+header{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 24px;height:var(--header-h);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;flex-shrink:0;
+}
+.logo{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;color:var(--green);
+  letter-spacing:0.15em;text-shadow:0 0 18px rgba(30,192,36,0.45);text-decoration:none;}
+.logo-sub{color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;
+  font-weight:400;margin-left:10px;letter-spacing:0.05em;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.clock{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--green);
+  letter-spacing:0.04em;white-space:nowrap;}
+.hdr-btn{padding:5px 10px;border:1px solid var(--border);color:var(--dim);
+  font-family:'Share Tech Mono',monospace;font-size:10px;text-decoration:none;
+  transition:all 0.15s;background:transparent;cursor:pointer;letter-spacing:0.04em;
+  white-space:nowrap;border-radius:1px;}
+.hdr-btn:hover{border-color:var(--green);color:var(--green);}
+.hdr-user{font-size:10px;color:var(--green-dim);letter-spacing:0.06em;}
+.hamburger{display:none;flex-direction:column;gap:5px;background:transparent;
+  border:1px solid var(--border);padding:8px 10px;cursor:pointer;border-radius:1px;}
+.hamburger span{display:block;width:16px;height:1.5px;background:var(--text);transition:all 0.2s;}
+.hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);background:var(--green);}
+.hamburger.open span:nth-child(2){opacity:0;}
+.hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);background:var(--green);}
+
+/* ── Section nav — sits directly below header, sticky at top+header-h ── */
+.snav{
+  background:var(--bg3);border-bottom:1px solid var(--border);
+  display:flex;overflow-x:auto;padding:0 20px;
+  position:sticky;top:var(--header-h);z-index:190;flex-shrink:0;
+  scrollbar-width:none;
+}
+.snav::-webkit-scrollbar{display:none;}
+.snav button,.snav a{
+  padding:0 14px;height:var(--snav-h);
+  background:transparent;border:none;border-bottom:2px solid transparent;
+  color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:11px;
+  cursor:pointer;letter-spacing:0.06em;transition:color 0.15s,border-color 0.15s;
+  white-space:nowrap;text-decoration:none;display:flex;align-items:center;
+}
+.snav button:hover,.snav a:hover{color:var(--text);}
+.snav button.on{color:var(--green);border-bottom-color:var(--green);}
+
+/* ── Mobile drawer ── */
+.mobile-drawer{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.6);}
+.mobile-drawer.open{display:block;}
+.mobile-drawer-inner{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;
+  background:var(--bg2);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;}
+.md-header{display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;height:var(--header-h);border-bottom:1px solid var(--border);
+  background:var(--bg3);flex-shrink:0;}
+.md-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--green);letter-spacing:0.12em;}
+.md-close{background:transparent;border:none;color:var(--dim);font-size:20px;cursor:pointer;padding:4px 8px;}
+.md-btn{padding:14px 20px;background:transparent;border:none;
+  border-bottom:1px solid rgba(30,192,36,0.07);color:var(--dim);
+  font-family:'Share Tech Mono',monospace;font-size:12px;cursor:pointer;
+  text-align:left;letter-spacing:0.06em;transition:all 0.15s;width:100%;text-decoration:none;display:block;}
+.md-btn::before{content:'▶ ';font-size:8px;color:var(--green-dim);margin-right:4px;}
+.md-btn:hover{background:var(--green-glow);color:var(--green);}
+.md-btn.active{color:var(--green);background:var(--green-glow2);border-left:2px solid var(--green);}
+.md-sep{border-top:1px solid var(--border);margin:6px 0;}
+
+/* ── Layout ── */
+.main{max-width:1340px;margin:0 auto;padding:20px 24px;}
+.section{margin-bottom:28px;animation:fadeIn 0.3s ease both;}
+
+/* ── Unified Panel ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.ph{background:var(--bg3);border-bottom:1px solid var(--border);
+  padding:0 14px;height:36px;
+  font-family:'Orbitron',monospace;font-size:9px;font-weight:700;
+  color:var(--green);letter-spacing:0.12em;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.ph-l{display:flex;align-items:center;gap:6px;}
+.ph-l::before{content:'▶';font-size:7px;color:var(--green-dim);}
+.ph-sub{font-family:'Share Tech Mono',monospace;font-weight:400;font-size:10px;color:var(--dim);letter-spacing:0;}
+.pb{padding:14px;}
+
+/* ── Stat cards ── */
+.g-card{background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:12px 14px;}
+.g-label{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--dim);
+  letter-spacing:0.12em;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+.g-val{font-family:'Orbitron',monospace;font-size:clamp(20px,5vw,28px);font-weight:900;
+  color:var(--green);text-shadow:0 0 12px rgba(30,192,36,0.3);line-height:1;margin-bottom:8px;}
+.g-val .u{font-size:11px;color:var(--dim);font-weight:400;}
+canvas.spark{width:100%;height:40px;display:block;}
+.bar-track{height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden;}
+.bar-fill{height:100%;background:var(--green);border-radius:2px;transition:width 0.6s ease;}
+.bar-fill.warn{background:var(--amber);} .bar-fill.danger{background:var(--red);}
+
+/* ── Info grid ── */
+.kv{margin-bottom:8px;} .kv:last-child{margin-bottom:0;}
+.kk{font-size:10px;color:var(--dim);letter-spacing:0.08em;margin-bottom:2px;}
+.vv{font-size:12px;color:var(--text);word-break:break-all;line-height:1.3;}
+.vv.green{color:var(--green);} .vv.amber{color:var(--amber);} .vv.blue{color:var(--blue);}
+
+/* ── Grid layouts ── */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:12px;}
+
+/* ── Section label ── */
+.slabel{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;
+  color:var(--dim);letter-spacing:0.2em;margin-bottom:12px;padding-bottom:6px;
+  border-bottom:1px solid var(--border);}
+
+/* ── Buttons ── */
+.btn{display:block;width:100%;padding:9px 14px;background:transparent;
+  border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;
+  font-size:12px;cursor:pointer;text-align:left;letter-spacing:0.05em;
+  transition:all 0.15s;margin-bottom:7px;border-radius:1px;}
+.btn:last-child{margin-bottom:0;}
+.btn::before{content:'> ';color:var(--green-dim);}
+.btn:hover{background:var(--green-glow);border-color:var(--green);color:var(--green-bright);}
+.btn:active{transform:scale(0.98);}
+.btn.primary{border-color:var(--green-dim);color:var(--green);}
+.btn.primary:hover{background:rgba(30,192,36,0.18);border-color:var(--green-bright);}
+.btn.danger{border-color:rgba(255,68,68,0.3);color:var(--red);}
+.btn.danger::before{color:rgba(255,68,68,0.4);}
+.btn.danger:hover{background:rgba(255,68,68,0.1);border-color:var(--red);}
+.btn.amber{border-color:rgba(255,170,0,0.3);color:var(--amber);}
+.btn.amber::before{color:rgba(255,170,0,0.4);}
+.btn.amber:hover{background:rgba(255,170,0,0.1);border-color:var(--amber);}
+.btn-inner{display:flex;justify-content:space-between;align-items:center;width:100%;pointer-events:none;}
+.badge-pill{font-size:10px;padding:2px 7px;border-radius:99px;font-family:'Share Tech Mono',monospace;
+  letter-spacing:0.03em;white-space:nowrap;margin-left:6px;}
+.badge-pill.has{background:rgba(255,170,0,0.12);color:var(--amber);border:1px solid rgba(255,170,0,0.4);}
+.badge-pill.ok{background:rgba(30,192,36,0.08);color:var(--green-dim);border:1px solid rgba(30,192,36,0.2);}
+.badge-pill.dim{background:transparent;color:var(--dim);border:1px solid var(--border);}
+
+/* ── Inline buttons ── */
+.ibtn{padding:5px 11px;background:transparent;border:1px solid var(--border);color:var(--text);
+  font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;
+  transition:all 0.15s;white-space:nowrap;border-radius:1px;flex-shrink:0;}
+.ibtn:hover{border-color:var(--green);color:var(--green);background:var(--green-glow);}
+.ibtn.primary{border-color:var(--green-dim);color:var(--green);}
+.ibtn.primary:hover{background:rgba(30,192,36,0.15);border-color:var(--green-bright);}
+.ibtn.danger{border-color:rgba(255,68,68,0.3);color:var(--red);}
+.ibtn.danger:hover{background:rgba(255,68,68,0.1);border-color:var(--red);}
+.ibtn.sm{padding:3px 8px;font-size:10px;}
+
+/* ── Inputs ── */
+.irow{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+.irow:last-child{margin-bottom:0;}
+.ilbl{font-size:10px;color:var(--dim);letter-spacing:0.08em;min-width:80px;flex-shrink:0;}
+input[type=text],input[type=number],input[type=password],select,textarea{
+  background:var(--bg);border:1px solid var(--border);color:var(--green-bright);
+  font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 10px;
+  outline:none;border-radius:1px;transition:border-color 0.15s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 6px rgba(30,192,36,0.1);}
+select option{background:var(--bg2);}
+textarea{resize:vertical;min-height:80px;line-height:1.6;}
+hr.div{border:none;border-top:1px solid var(--border);margin:10px 0;}
+
+/* ── Output / pre boxes ── */
+.out{background:var(--bg);border:1px solid var(--border);padding:10px 12px;
+  font-size:11px;color:var(--dim);line-height:1.7;border-radius:1px;
+  white-space:pre-wrap;word-break:break-all;overflow-y:auto;}
+.out.scroll{max-height:180px;} .out.tall{max-height:300px;}
+.out.hide{display:none;} .out.show{display:block;}
+.out::-webkit-scrollbar{width:4px;} .out::-webkit-scrollbar-thumb{background:var(--green-dim);}
+
+/* ── Log viewer ── */
+.log-box{background:#000;border:1px solid var(--border);border-radius:1px;
+  padding:10px 12px;height:280px;overflow-y:auto;font-size:11px;line-height:1.65;}
+.log-box::-webkit-scrollbar{width:4px;} .log-box::-webkit-scrollbar-thumb{background:var(--green-dim);}
+.log-line{color:var(--dim);} .log-line.err{color:var(--red);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+  animation:blink 1.2s infinite;display:inline-block;margin-right:5px;}
+
+/* ── Status LEDs ── */
+.led{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.4s,box-shadow 0.4s;}
+.led.green{background:#1ec024;box-shadow:0 0 6px #1ec024;}
+.led.red{background:#ff4444;box-shadow:0 0 5px #ff4444;}
+.led.amber{background:#ffaa00;box-shadow:0 0 5px #ffaa00;}
+.led.dim{background:#1e2a1e;box-shadow:none;}
+
+/* ── Process table ── */
+.proc-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
+.proc-table th{padding:6px 10px;text-align:left;color:var(--dim);font-weight:400;
+  font-size:10px;border-bottom:1px solid var(--border);background:var(--bg3);}
+.proc-table td{padding:5px 10px;border-bottom:1px solid rgba(30,192,36,0.05);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0;}
+.proc-table tr:hover td{background:var(--bg3);}
+.proc-scroll{max-height:260px;overflow-y:auto;}
+.proc-scroll::-webkit-scrollbar{width:4px;} .proc-scroll::-webkit-scrollbar-thumb{background:var(--green-dim);}
+.cpu-hot{color:var(--red);} .cpu-warm{color:var(--amber);}
+
+/* ── WiFi ── */
+.wifi-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;}
+.wifi-list::-webkit-scrollbar{width:4px;} .wifi-list::-webkit-scrollbar-thumb{background:var(--green-dim);}
+.wifi-item{background:var(--bg);border:1px solid var(--border);padding:8px 12px;
+  display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+  transition:all 0.15s;border-radius:1px;}
+.wifi-item:hover{border-color:var(--green);background:var(--green-glow);}
+.wifi-ssid{font-size:12px;color:var(--text);}
+.wifi-sig{font-size:10px;color:var(--dim);}
+
+/* ── Script list ── */
+.script-item{background:var(--bg);border:1px solid var(--border);padding:8px 12px;
+  display:flex;align-items:center;gap:8px;border-radius:1px;margin-bottom:6px;}
+.script-item:last-child{margin-bottom:0;}
+.script-name{font-size:12px;color:var(--green);flex:1;}
+.script-cmd{font-size:10px;color:var(--dim);flex:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── Git ── */
+.git-commit{font-size:11px;color:var(--dim);padding:3px 0;border-bottom:1px solid rgba(30,192,36,0.05);}
+.git-commit .hash{color:var(--amber);margin-right:8px;}
+
+/* ── Tables (shared) ── */
+.data-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
+.data-table th{padding:7px 12px;text-align:left;color:var(--dim);font-size:10px;
+  font-weight:400;border-bottom:1px solid var(--border);background:var(--bg3);}
+.data-table td{padding:6px 12px;border-bottom:1px solid rgba(30,192,36,0.05);vertical-align:middle;}
+.data-table tr:hover td{background:var(--bg3);}
+.tscroll{overflow-y:auto;} .tscroll::-webkit-scrollbar{width:4px;}
+.tscroll::-webkit-scrollbar-thumb{background:var(--green-dim);}
+
+/* ── Confirm modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);
+  z-index:500;align-items:center;justify-content:center;pointer-events:none;}
+.modal-bg.show{display:flex;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--border-hi);padding:22px;
+  min-width:340px;max-width:92vw;border-radius:2px;animation:fadeIn 0.15s ease;}
+.modal h2{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--green);letter-spacing:0.1em;margin-bottom:14px;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;}
+.confirm-box{background:#0a0000;border:1px solid rgba(255,68,68,0.5);
+  padding:28px 32px;border-radius:2px;text-align:center;max-width:360px;}
+.confirm-box .cmsg{font-size:13px;color:#ff8888;letter-spacing:0.05em;
+  margin-bottom:20px;line-height:1.5;}
+.confirm-btns{display:flex;gap:10px;justify-content:center;}
+.cyes{padding:9px 28px;background:rgba(255,68,68,0.12);border:1px solid #ff4444;
+  color:#ff4444;font-family:'Share Tech Mono',monospace;font-size:13px;cursor:pointer;
+  letter-spacing:0.1em;border-radius:1px;transition:all 0.15s;}
+.cyes:hover{background:rgba(255,68,68,0.28);}
+.cno{padding:9px 28px;background:transparent;border:1px solid rgba(255,68,68,0.25);
+  color:rgba(255,68,68,0.5);font-family:'Share Tech Mono',monospace;font-size:13px;
+  cursor:pointer;letter-spacing:0.1em;border-radius:1px;transition:all 0.15s;}
+.cno:hover{color:#ff8888;border-color:rgba(255,68,68,0.5);}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:28vh;left:50%;transform:translateX(-50%) translateY(8px);
+  padding:9px 22px;background:var(--bg3);border:1px solid var(--border);
+  font-size:12px;color:var(--green);opacity:0;transition:opacity 0.2s,transform 0.2s;
+  z-index:2000;border-radius:1px;max-width:400px;text-align:center;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.error{border-color:rgba(255,68,68,0.5);color:var(--red);}
+
+/* ── Reboot splash ── */
+#reboot-splash{display:none;position:fixed;inset:0;background:#050a05;z-index:9999;
+  align-items:center;justify-content:center;flex-direction:column;gap:20px;}
+#reboot-splash.show{display:flex;}
+
+/* ── Terminal ── */
+#term-container{background:#000;padding:8px;}
+/* xterm scrollbar styling */
+.xterm-viewport::-webkit-scrollbar{width:4px;}
+.xterm-viewport::-webkit-scrollbar-track{background:#000;}
+.xterm-viewport::-webkit-scrollbar-thumb{background:var(--green-dim);border-radius:2px;}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .grid-4{grid-template-columns:1fr 1fr;}
+  .grid-3{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:768px){
+  .hamburger{display:flex;}
+  .hdr-desktop{display:none !important;}
+  #hdr-auth{display:none !important;}
+  .hdr-right .clock,
+  .hdr-right .hdr-btn:not(.hamburger-btn),
+  .hdr-right > a{display:none !important;}
+  .snav{display:none !important;}
+  .main{padding:12px;}
+  .grid-4,.grid-3,.grid-2,.grid-2-1{grid-template-columns:1fr;}
+  .g-val{font-size:22px;}
+  header{padding:0 16px;}
+}
+@media(max-width:400px){
+  .grid-4{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════════════════ -->
+<header>
+  <a href="/" class="logo" id="header-logo">PiL0t <span class="logo-sub" id="header-sub">SYSTEM</span></a>
+  <div class="hdr-right">
+    <span class="clock hdr-desktop" id="clock">--:--:--</span>
+    <a href="/" class="hdr-btn hdr-desktop">‹ PRINT</a>
+    <span id="hdr-auth" class="hdr-desktop" style="display:none;align-items:center;gap:8px;">
+      <span class="hdr-user" id="hdr-user"></span>
+      <button class="hdr-btn" id="logout-btn">⏻ LOGOUT</button>
+    </span>
+    <button class="hamburger" id="hamburger" onclick="toggleDrawer()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- ══ SECTION NAV ══════════════════════════════════════════════════════════ -->
+<nav class="snav" id="snav">
+  <button data-s="s-perf" class="on">PERFORMANCE</button>
+  <button data-s="s-info">SYSTEM INFO</button>
+  <button data-s="s-diag">DIAGNOSTICS</button>
+  <button data-s="s-logs">LOGS</button>
+  <button data-s="s-wifi">WIFI</button>
+  <button data-s="s-project">PROJECT TOOLS</button>
+  <button data-s="s-auth">AUTH</button>
+  <button data-s="s-maint">MAINTENANCE</button>
+  <button data-s="s-term">TERMINAL</button>
+  <a href="/files">FILE BROWSER</a>
+</nav>
+
+<!-- ══ MOBILE DRAWER ════════════════════════════════════════════════════════ -->
+<div id="drawer" class="mobile-drawer">
+  <div class="mobile-drawer-inner">
+    <div class="md-header">
+      <span class="md-title">NAVIGATE</span>
+      <button class="md-close" onclick="toggleDrawer()">×</button>
+    </div>
+    <button class="md-btn" onclick="navTo('s-perf')">PERFORMANCE</button>
+    <button class="md-btn" onclick="navTo('s-info')">SYSTEM INFO</button>
+    <button class="md-btn" onclick="navTo('s-diag')">DIAGNOSTICS</button>
+    <button class="md-btn" onclick="navTo('s-logs')">LOGS</button>
+    <button class="md-btn" onclick="navTo('s-wifi')">WIFI</button>
+    <button class="md-btn" onclick="navTo('s-project')">PROJECT TOOLS</button>
+    <button class="md-btn" onclick="navTo('s-auth')">AUTH</button>
+    <button class="md-btn" onclick="navTo('s-maint')">MAINTENANCE</button>
+    <button class="md-btn" onclick="navTo('s-term')">TERMINAL</button>
+    <div class="md-sep"></div>
+    <a href="/" class="md-btn">‹ PRINT PAGE</a>
+    <a href="/files" class="md-btn">FILE BROWSER</a>
+    <button class="md-btn" id="mobile-logout" style="display:none;color:var(--green);">⏻ LOGOUT</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ══ PERFORMANCE ══════════════════════════════════════════════════════════ -->
+<div class="section" id="s-perf">
+  <div class="slabel">PERFORMANCE — LIVE</div>
+  <div class="grid-4" style="margin-bottom:12px;">
+    <div class="g-card">
+      <div class="g-label">CPU USAGE <span style="display:flex;align-items:center;gap:6px;"><span id="cpu-lbl" style="font-family:'Share Tech Mono',monospace;font-weight:400;font-size:10px;">--</span><span class="led dim" id="led-cpu"></span></span></div>
+      <div class="g-val" id="cpu-val">--<span class="u">%</span></div>
+      <canvas class="spark" id="cpu-spark"></canvas>
+    </div>
+    <div class="g-card">
+      <div class="g-label">MEMORY <span style="display:flex;align-items:center;gap:6px;"><span id="mem-lbl" style="font-family:'Share Tech Mono',monospace;font-weight:400;font-size:10px;">--</span><span class="led dim" id="led-mem"></span></span></div>
+      <div class="g-val" id="mem-val">--<span class="u">MB</span></div>
+      <canvas class="spark" id="mem-spark"></canvas>
+    </div>
+    <div class="g-card">
+      <div class="g-label">SWAP <span style="display:flex;align-items:center;gap:6px;"><span id="vmem-lbl" style="font-family:'Share Tech Mono',monospace;font-weight:400;font-size:10px;">--</span><span class="led dim" id="led-vmem"></span></span></div>
+      <div class="g-val" id="vmem-val">--<span class="u">MB</span></div>
+      <canvas class="spark" id="vmem-spark"></canvas>
+    </div>
+    <div class="g-card">
+      <div class="g-label">DISK <span style="display:flex;align-items:center;gap:6px;"><span id="disk-lbl" style="font-family:'Share Tech Mono',monospace;font-weight:400;font-size:10px;">--</span><span class="led dim" id="led-disk"></span></span></div>
+      <div class="g-val" id="disk-val">--<span class="u">GB</span></div>
+      <canvas class="spark" id="disk-spark"></canvas>
+      <div class="bar-track"><div class="bar-fill" id="disk-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="grid-3">
+    <div class="g-card">
+      <div class="g-label">TEMPERATURE</div>
+      <div class="g-val" id="cpu-temp-val">--<span class="u">°C</span></div>
+      <div style="font-size:10px;color:var(--dim)" id="cpu-temp-sub">--</div>
+    </div>
+    <div class="g-card">
+      <div class="g-label">UPTIME</div>
+      <div class="g-val" style="font-size:20px;margin-top:4px;" id="perf-uptime">--</div>
+      <div style="font-size:10px;color:var(--dim)">SINCE LAST BOOT</div>
+    </div>
+    <div class="g-card">
+      <div class="g-label">PROCESSES</div>
+      <div class="g-val" id="perf-procs">--</div>
+      <div style="font-size:10px;color:var(--dim)">RUNNING</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SYSTEM INFO ══════════════════════════════════════════════════════════ -->
+<div class="section" id="s-info">
+  <div class="slabel">SYSTEM INFORMATION</div>
+  <div class="grid-3" style="margin-bottom:12px;">
+    <div class="panel"><div class="ph"><div class="ph-l">PROCESSOR</div><span class="led dim" id="led-info"></span></div><div class="pb">
+      <div class="kv"><div class="kk">MODEL</div><div class="vv" id="cpu-model">--</div></div>
+      <div class="kv"><div class="kk">CORES</div><div class="vv green" id="cpu-cores">--</div></div>
+      <div class="kv"><div class="kk">ARCHITECTURE</div><div class="vv" id="cpu-arch">--</div></div>
+      <div class="kv"><div class="kk">TEMPERATURE</div><div class="vv" id="cpu-temp">--</div></div>
+    </div></div>
+    <div class="panel"><div class="ph"><div class="ph-l">OPERATING SYSTEM</div></div><div class="pb">
+      <div class="kv"><div class="kk">DISTRO</div><div class="vv" id="os-name">--</div></div>
+      <div class="kv"><div class="kk">KERNEL</div><div class="vv green" id="os-kernel">--</div></div>
+      <div class="kv"><div class="kk">HOSTNAME</div><div class="vv" id="os-hostname">--</div></div>
+      <div class="kv"><div class="kk">UPTIME</div><div class="vv green" id="os-uptime">--</div></div>
+    </div></div>
+    <div class="panel"><div class="ph"><div class="ph-l">NETWORK</div></div><div class="pb">
+      <div class="kv"><div class="kk">LAN IP</div><div class="vv green" id="net-ip">--</div></div>
+      <div class="kv"><div class="kk">INTERFACE</div><div class="vv" id="net-iface">--</div></div>
+      <div class="kv"><div class="kk">MAC ADDRESS</div><div class="vv" id="net-mac">--</div></div>
+      <div class="kv"><div class="kk">STATUS</div><div class="vv green" id="net-status">--</div></div>
+    </div></div>
+  </div>
+  <div class="grid-2">
+    <div class="panel"><div class="ph"><div class="ph-l">APP BRANDING</div><span class="led dim" id="led-branding"></span></div><div class="pb">
+      <div class="irow"><span class="ilbl" style="min-width:100px;">TITLE</span><input type="text" id="brand-title" placeholder="PiL0t" maxlength="40" oninput="updateBrandPreview()"></div>
+      <div class="irow"><span class="ilbl" style="min-width:100px;">SUBTITLE</span><input type="text" id="brand-subtitle" placeholder="PRINT SERVER" maxlength="60" oninput="updateBrandPreview()"></div>
+      <div style="background:var(--bg);border:1px solid var(--border);padding:10px 14px;margin-bottom:10px;border-radius:1px;">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">PREVIEW</div>
+        <span id="brand-prev-t" style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--green);">PiL0t</span>
+        <span id="brand-prev-s" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);margin-left:8px;">PRINT SERVER</span>
+      </div>
+      <button class="btn primary" onclick="saveBranding()">SAVE BRANDING</button>
+    </div></div>
+    <div class="panel"><div class="ph"><div class="ph-l">DEVICE IDENTITY</div><span class="led dim" id="led-hostname"></span></div><div class="pb">
+      <div class="kv"><div class="kk">CURRENT HOSTNAME</div><div class="vv green" id="ident-current">--</div></div>
+      <hr class="div">
+      <div class="irow"><span class="ilbl" style="min-width:120px;">NEW HOSTNAME</span><input type="text" id="ident-hostname" placeholder="pi-printsrv" maxlength="63"></div>
+      <div style="font-size:10px;color:var(--dim);margin-bottom:10px;">Letters, numbers and hyphens only.</div>
+      <button class="btn primary" onclick="saveHostname()">APPLY HOSTNAME</button>
+      <div class="out scroll hide" id="hostname-out" style="margin-top:8px;"></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══ DIAGNOSTICS ══════════════════════════════════════════════════════════ -->
+<div class="section" id="s-diag">
+  <div class="slabel">DIAGNOSTICS</div>
+  <div class="grid-3">
+    <div class="panel"><div class="ph"><div class="ph-l">NETWORK TOOLS</div><span class="led dim" id="led-network"></span></div><div class="pb">
+      <div class="irow"><span class="ilbl">HOST / IP</span><input type="text" id="diag-host" placeholder="10.10.10.249 or google.com"></div>
+      <div class="irow"><span class="ilbl">PORT</span><input type="number" id="diag-port" placeholder="9100" style="width:80px;flex:none;"></div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="ibtn primary" onclick="diagPing()" style="flex:1">PING</button>
+        <button class="ibtn" onclick="diagTrace()" style="flex:1">TRACE</button>
+        <button class="ibtn" onclick="diagPort()" style="flex:1">PORT</button>
+      </div>
+      <div class="out scroll show" id="diag-out" style="margin-top:10px;min-height:60px;">Enter a host above.</div>
+    </div></div>
+
+    <div class="panel"><div class="ph"><div class="ph-l">PROCESSES</div><span class="led dim" id="led-procs"></span><button class="ibtn sm" onclick="loadProcs()">REFRESH</button></div>
+      <div class="proc-scroll">
+        <table class="proc-table"><thead><tr>
+          <th style="width:70px">USER</th><th style="width:48px">PID</th>
+          <th style="width:46px">CPU%</th><th style="width:46px">MEM%</th>
+          <th>COMMAND</th><th style="width:46px"></th>
+        </tr></thead>
+        <tbody id="proc-tbody"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--dim)">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <div class="panel"><div class="ph"><div class="ph-l">HARDWARE</div><span class="led dim" id="led-hardware"></span><button class="ibtn sm" onclick="loadHardware()">REFRESH</button></div><div class="pb">
+      <div class="kv"><div class="kk">THROTTLE STATUS</div><div class="vv" id="hw-throttle">--</div></div>
+      <hr class="div">
+      <div class="kk" style="margin-bottom:6px">USB DEVICES</div>
+      <div class="out scroll show" id="hw-usb" style="max-height:70px;">--</div>
+      <div class="kk" style="margin:8px 0 6px">GPIO PINS</div>
+      <div class="out scroll show" id="hw-gpio" style="max-height:55px;">--</div>
+      <div class="kk" style="margin:8px 0 6px">I2C SCAN</div>
+      <div class="out scroll show" id="hw-i2c" style="max-height:55px;">--</div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══ LOGS ══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s-logs">
+  <div class="slabel">LOG VIEWER</div>
+  <div class="panel"><div class="ph">
+    <div class="ph-l">LOG VIEWER <span class="ph-sub" id="log-live-ind"></span></div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <select id="log-type" onchange="onLogTypeChange()" style="width:110px;padding:3px 6px;font-size:10px;">
+        <option value="service">Service</option>
+        <option value="file">File</option>
+        <option value="sku">Print Log</option>
+      </select>
+      <select id="log-svc-sel" style="width:170px;padding:3px 6px;font-size:10px;"><option>Loading...</option></select>
+      <input type="text" id="log-file-path" placeholder="/var/log/syslog" style="width:190px;padding:3px 6px;font-size:10px;display:none;">
+      <input type="number" id="log-lines" value="100" style="width:54px;padding:3px 6px;font-size:10px;" title="Lines">
+      <input type="text" id="log-filter" placeholder="filter..." style="width:90px;padding:3px 6px;font-size:10px;">
+      <button class="ibtn primary sm" onclick="loadLog()">LOAD</button>
+      <button class="ibtn sm" id="log-tail-btn" onclick="toggleTail()">TAIL</button>
+      <button class="ibtn sm" onclick="clearLogView()">CLEAR</button>
+    </div>
+  </div>
+  <div class="log-box" id="log-box"></div>
+  </div>
+  <div class="grid-2" style="margin-top:12px;">
+    <div class="panel"><div class="ph">
+      <div class="ph-l">ACTIVE SESSIONS <span class="ph-sub" id="session-count"></span></div>
+      <button class="ibtn sm" onclick="loadSessions()">REFRESH</button>
+    </div>
+    <div class="tscroll" style="max-height:200px;">
+      <table class="data-table"><thead><tr>
+        <th style="width:25%">USER</th><th style="width:30%">TIME</th>
+        <th style="width:25%">IP</th><th style="width:20%"></th>
+      </tr></thead>
+      <tbody id="session-tbody"><tr><td colspan="4" style="padding:16px;text-align:center;color:var(--dim)">No active sessions</td></tr></tbody>
+      </table>
+    </div></div>
+
+    <div class="panel"><div class="ph"><div class="ph-l">LOGIN HISTORY</div></div><div class="pb" style="padding:0;">
+      <div class="log-box" id="login-hist" style="height:180px;border:none;"></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══ WIFI ══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s-wifi" style="position:relative;">
+  <div id="wifi-lock" style="display:none;position:absolute;inset:0;background:rgba(5,10,5,0.93);
+    z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:12px;border-radius:2px;">
+    <div style="font-size:28px">🔒</div>
+    <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--green);letter-spacing:0.1em;">WIFI MANAGEMENT LOCKED</div>
+    <div style="font-size:11px;color:var(--dim);text-align:center;max-width:320px;line-height:1.7;">Connected via WiFi with no ethernet cable.<br>Plug in eth0 to safely change WiFi settings.</div>
+  </div>
+  <div class="slabel">WIFI MANAGER</div>
+  <div class="grid-2">
+    <div class="panel"><div class="ph"><div class="ph-l">CURRENT CONNECTION</div><span class="led dim" id="led-wifi"></span></div><div class="pb">
+      <div class="kv"><div class="kk">SSID</div><div class="vv green" id="wifi-ssid">--</div></div>
+      <div class="kv"><div class="kk">IP ADDRESS</div><div class="vv" id="wifi-ip">--</div></div>
+      <hr class="div">
+      <button class="btn danger" onclick="wifiDisconnect()">DISCONNECT</button>
+      <button class="btn amber" onclick="confirmAction('Clear all saved WiFi profiles?', wifiClear)">CLEAR ALL PROFILES</button>
+    </div></div>
+    <div class="panel"><div class="ph"><div class="ph-l">AVAILABLE NETWORKS</div><span class="led dim" id="led-wifi-scan"></span><button class="ibtn sm" onclick="wifiScan()">SCAN</button></div><div class="pb" style="padding:8px;">
+      <div class="wifi-list" id="wifi-list"><div style="color:var(--dim);text-align:center;padding:20px;font-size:11px;">Press SCAN to discover networks</div></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- WiFi connect modal -->
+<div class="modal-bg" id="wifi-modal">
+  <div class="modal"><h2>CONNECT TO NETWORK</h2>
+    <div style="margin-bottom:10px;color:var(--text);font-size:13px;" id="wifi-modal-ssid"></div>
+    <input type="password" id="wifi-pw" placeholder="Password (leave blank for open networks)">
+    <div class="modal-btns">
+      <button class="ibtn" onclick="closeModal('wifi-modal')">CANCEL</button>
+      <button class="ibtn primary" onclick="wifiConnect()">CONNECT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROJECT TOOLS ══════════════════════════════════════════════════════════ -->
+<div class="section" id="s-project">
+  <div class="slabel">PROJECT TOOLS</div>
+  <div class="grid-2" style="margin-bottom:12px;">
+    <div class="panel"><div class="ph"><div class="ph-l">SCRIPT RUNNER</div><span class="led dim" id="led-scripts"></span><button class="ibtn primary sm" onclick="showAddScript()">+ ADD</button></div><div class="pb">
+      <div id="script-list" style="margin-bottom:10px;"><div style="color:var(--dim);font-size:11px;">No saved scripts. Click + ADD to create one.</div></div>
+      <hr class="div">
+      <div class="kk" style="margin-bottom:6px">OUTPUT</div>
+      <div class="out scroll show" id="script-out" style="min-height:55px;">Ready.</div>
+    </div></div>
+
+    <div class="panel"><div class="ph"><div class="ph-l">ENV FILE EDITOR</div><span class="led dim" id="led-env"></span></div><div class="pb">
+      <div class="irow"><span class="ilbl">FILE PATH</span><input type="text" id="env-path" value="/home/sysadmin/.env"><button class="ibtn sm" onclick="loadEnv()">LOAD</button></div>
+      <textarea id="env-raw" style="margin-top:8px;min-height:130px;font-size:11px;" placeholder="KEY=value&#10;ANOTHER_KEY=value"></textarea>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="ibtn primary" onclick="saveEnv()" style="flex:1">SAVE</button>
+        <button class="ibtn" onclick="loadEnv()" style="flex:1">RELOAD</button>
+      </div>
+    </div></div>
+  </div>
+  <div class="grid-2">
+    <div class="panel"><div class="ph"><div class="ph-l">CRON MANAGER</div><span class="led dim" id="led-cron"></span><button class="ibtn sm" onclick="loadCron()">REFRESH</button></div><div class="pb">
+      <div class="tscroll" style="max-height:120px;margin-bottom:10px;">
+        <table class="data-table"><thead><tr><th>SCHEDULE</th><th>COMMAND</th><th style="width:40px"></th></tr></thead>
+        <tbody id="cron-tbody"></tbody></table>
+      </div>
+      <hr class="div">
+      <div class="kk" style="margin-bottom:6px">EDIT RAW CRONTAB</div>
+      <textarea id="cron-raw" style="min-height:70px;font-size:11px;" placeholder="# m h dom mon dow command"></textarea>
+      <button class="ibtn primary" onclick="saveCron()" style="margin-top:6px;width:100%">SAVE CRONTAB</button>
+    </div></div>
+
+    <div class="panel"><div class="ph"><div class="ph-l">GIT</div><span class="led dim" id="led-git"></span></div><div class="pb">
+      <div class="irow"><span class="ilbl">REPO PATH</span><input type="text" id="git-path" value="/home/sysadmin"><button class="ibtn sm" onclick="loadGit()">LOAD</button></div>
+      <div class="kv" style="margin-top:10px;"><div class="kk">BRANCH</div><div class="vv green" id="git-branch">--</div></div>
+      <div class="kv"><div class="kk">REMOTE</div><div class="vv" id="git-remote" style="font-size:10px;">--</div></div>
+      <div class="kk" style="margin:8px 0 4px">CHANGES</div>
+      <div class="out show" id="git-status" style="max-height:50px;margin-bottom:8px;">--</div>
+      <div class="kk" style="margin-bottom:4px">RECENT COMMITS</div>
+      <div class="out scroll show" id="git-log" style="max-height:70px;margin-bottom:8px;">--</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="ibtn primary sm" onclick="gitAction('pull')" style="flex:1">PULL</button>
+        <button class="ibtn sm" onclick="gitAction('fetch')" style="flex:1">FETCH</button>
+        <button class="ibtn sm" onclick="gitAction('status')" style="flex:1">STATUS</button>
+        <button class="ibtn danger sm" onclick="confirmAction('Hard reset to HEAD? Uncommitted changes will be lost.', ()=>gitAction('reset'))" style="flex:1">RESET</button>
+      </div>
+      <div class="out scroll hide" id="git-out" style="margin-top:8px;"></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- Script add modal -->
+<div class="modal-bg" id="script-modal">
+  <div class="modal"><h2 id="script-modal-title">ADD SCRIPT</h2>
+    <div class="irow" style="margin-bottom:8px;"><span class="ilbl">NAME</span><input type="text" id="script-name" placeholder="Restart services"></div>
+    <div class="irow"><span class="ilbl">COMMAND</span><input type="text" id="script-cmd-input" placeholder="sudo systemctl restart pil0t-tracker"></div>
+    <div class="modal-btns">
+      <button class="ibtn" onclick="closeModal('script-modal')">CANCEL</button>
+      <button class="ibtn primary" onclick="saveScript()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ AUTH ══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s-auth">
+  <div class="slabel">AUTHENTICATION & ACCESS CONTROL</div>
+  <div class="grid-3">
+    <div class="panel"><div class="ph"><div class="ph-l">USER MANAGEMENT</div><span class="led dim" id="led-users"></span><button class="ibtn primary sm" onclick="showAddUser()">+ ADD USER</button></div>
+      <div class="tscroll" style="max-height:240px;">
+        <table class="data-table"><thead><tr>
+          <th style="width:40%">USERNAME</th><th style="width:25%">ROLE</th><th style="width:35%"></th>
+        </tr></thead>
+        <tbody id="user-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <div class="panel"><div class="ph"><div class="ph-l">PAGE ACCESS</div><span class="led dim" id="led-access"></span></div><div class="pb">
+      <div style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.6;">Control which sections require login.</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid rgba(30,192,36,0.07);">
+        <div><div style="font-size:12px;color:var(--text)">Print Page</div><div style="font-size:10px;color:var(--dim)">Guest access allowed</div></div>
+        <input type="checkbox" id="cfg-guest-print" style="accent-color:var(--green);">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid rgba(30,192,36,0.07);">
+        <div><div style="font-size:12px;color:var(--text)">System Page</div><div style="font-size:10px;color:var(--dim)">/system</div></div>
+        <input type="checkbox" id="cfg-system" style="accent-color:var(--green);">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid rgba(30,192,36,0.07);">
+        <div><div style="font-size:12px;color:var(--text)">File Browser</div><div style="font-size:10px;color:var(--dim)">/files</div></div>
+        <input type="checkbox" id="cfg-files" style="accent-color:var(--green);">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid rgba(30,192,36,0.07);">
+        <div><div style="font-size:12px;color:var(--text)">System API</div><div style="font-size:10px;color:var(--dim)">Metrics endpoints</div></div>
+        <input type="checkbox" id="cfg-api" style="accent-color:var(--green);">
+      </div>
+      <hr class="div">
+      <button class="btn primary" onclick="saveAuthConfig()">SAVE ACCESS SETTINGS</button>
+    </div></div>
+
+    <div class="panel"><div class="ph"><div class="ph-l">SESSION INFO</div><span class="led dim" id="led-session"></span></div><div class="pb">
+      <div style="font-size:11px;color:var(--dim);margin-bottom:10px;">Require password for destructive actions.</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid rgba(30,192,36,0.07);">
+        <div><div style="font-size:12px;color:var(--text)">Reboot / Shutdown</div><div style="font-size:10px;color:var(--dim)">Power controls</div></div>
+        <input type="checkbox" id="cfg-reboot-auth" style="accent-color:var(--green);">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid rgba(30,192,36,0.07);">
+        <div><div style="font-size:12px;color:var(--text)">Delete Files</div><div style="font-size:10px;color:var(--dim)">File browser deletions</div></div>
+        <input type="checkbox" id="cfg-delete-auth" style="accent-color:var(--green);">
+      </div>
+      <hr class="div">
+      <button class="btn primary" onclick="saveAuthConfig()">SAVE ACTION SETTINGS</button>
+      <hr class="div">
+      <div class="kk" style="margin-bottom:4px">CURRENT SESSION</div>
+      <div id="auth-me" style="font-size:12px;color:var(--green);margin-bottom:10px;">--</div>
+      <button class="btn" id="logout-btn-2">LOGOUT</button>
+    </div></div>
+  </div>
+</div>
+
+<!-- User modal -->
+<div class="modal-bg" id="user-modal">
+  <div class="modal"><h2 id="user-modal-title">ADD USER</h2>
+    <div class="irow" style="margin-bottom:8px;"><span class="ilbl">USERNAME</span><input type="text" id="user-username"></div>
+    <div class="irow" style="margin-bottom:8px;"><span class="ilbl">PASSWORD</span><input type="password" id="user-password" placeholder="leave blank to keep"></div>
+    <div class="irow"><span class="ilbl">ROLE</span>
+      <select id="user-role"><option value="user">user</option><option value="admin">admin</option></select>
+    </div>
+    <div class="modal-btns">
+      <button class="ibtn" onclick="closeModal('user-modal')">CANCEL</button>
+      <button class="ibtn primary" onclick="saveUser()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAINTENANCE ════════════════════════════════════════════════════════════ -->
+<div class="section" id="s-maint">
+  <div class="slabel">MAINTENANCE & POWER</div>
+  <div class="panel" style="margin-bottom:12px;">
+    <div class="ph"><div class="ph-l">DEVICE MODE</div><span class="led dim" id="led-devmode"></span></div>
+    <div class="pb">
+      <p style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.7;">Change how PiL0t behaves. Switch between Print Server mode and Standard mode at any time.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div id="maint-card-standard" onclick="setDeviceMode('standard')" style="background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:16px 14px;cursor:pointer;transition:all 0.2s;text-align:center;">
+          <div style="font-size:22px;margin-bottom:8px;">⚙️</div>
+          <div style="font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:var(--green);letter-spacing:0.1em;margin-bottom:4px;">STANDARD</div>
+          <div style="font-size:10px;color:var(--dim);line-height:1.5;">General Pi management. Print interface hidden.</div>
+        </div>
+        <div id="maint-card-zebra" onclick="setDeviceMode('zebra')" style="background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:16px 14px;cursor:pointer;transition:all 0.2s;text-align:center;">
+          <div style="font-size:22px;margin-bottom:8px;">🏷️</div>
+          <div style="font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:var(--green);letter-spacing:0.1em;margin-bottom:4px;">PRINT SERVER</div>
+          <div style="font-size:10px;color:var(--dim);line-height:1.5;">Full ZPL print interface enabled.</div>
+        </div>
+      </div>
+      <div id="devmode-current" style="font-size:11px;color:var(--dim);text-align:center;"></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="panel"><div class="ph"><div class="ph-l">PACKAGE MANAGEMENT</div><span class="led dim" id="led-packages"></span></div><div class="pb">
+      <button class="btn primary" id="btn-update" onclick="sysUpdate()">APT-GET UPDATE — REFRESH PACKAGE LISTS</button>
+      <button class="btn primary" id="btn-upgrade" onclick="sysUpgrade()">APT-GET UPGRADE — INSTALL UPDATES</button>
+      <button class="btn" onclick="sysTrash()">EMPTY TRASH</button>
+      <div id="pkg-wrap" style="display:none;margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:10px;color:var(--dim);" id="pkg-title">OUTPUT</span>
+          <button class="ibtn sm" onclick="document.getElementById('pkg-wrap').style.display='none'">✕ CLOSE</button>
+        </div>
+        <div id="pkg-out" style="background:#000;border:1px solid var(--border);padding:10px 12px;
+          height:240px;overflow-y:auto;font-size:11px;color:var(--dim);line-height:1.6;
+          font-family:'Share Tech Mono',monospace;white-space:pre-wrap;word-break:break-all;"></div>
+        <div id="pkg-spinner" style="display:none;padding:5px 0;font-size:10px;color:var(--amber);">● RUNNING...</div>
+      </div>
+      <div id="update-checked" style="font-size:10px;color:var(--dim);margin-top:8px;"></div>
+    </div></div>
+
+    <div class="panel"><div class="ph"><div class="ph-l">POWER</div></div><div class="pb">
+      <button class="btn danger" onclick="confirmAction('REBOOT SRV?', sysReboot)">REBOOT SRV</button>
+      <button class="btn danger" onclick="confirmAction('SHUT DOWN SRV? Physical access required to restart.', sysShutdown)">SHUTDOWN SRV</button>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══ TERMINAL ════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s-term" style="margin-bottom:0;">
+  <div class="panel" style="display:flex;flex-direction:column;">
+    <div class="ph">
+      <div class="ph-l">BASH TERMINAL</div>
+      <div style="display:flex;gap:6px;">
+        <button class="ibtn sm" id="term-clear-btn">CLEAR</button>
+        <button class="ibtn sm" id="term-reconnect-btn">RECONNECT</button>
+      </div>
+    </div>
+    <!-- Terminal fills remaining viewport height below the panel header -->
+    <div id="term-container" style="flex:1;min-height:0;"></div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<div class="toast" id="toast"></div>
+
+<!-- Confirm modal -->
+<div class="modal-bg" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="cmsg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="cyes" id="confirm-yes">YES</button>
+      <button class="cno" onclick="confirmNo()">NO</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reboot splash -->
+<div id="reboot-splash">
+  <div style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:#1ec024;letter-spacing:0.2em;text-shadow:0 0 28px rgba(30,192,36,0.6)" id="splash-title">REBOOTING</div>
+  <div style="font-family:'Orbitron',monospace;font-size:72px;font-weight:900;color:#1ec024;text-shadow:0 0 40px rgba(30,192,36,0.5);line-height:1" id="splash-count">30</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#4a7a4b;letter-spacing:0.08em;text-align:center;" id="splash-status">Waiting for server...</div>
+  <div style="width:280px;height:3px;background:#0c160c;border-radius:2px;overflow:hidden;">
+    <div id="splash-bar" style="height:100%;background:#1ec024;border-radius:2px;width:100%;transition:width 1s linear;"></div>
+  </div>
+</div>
+
+<!-- ══ JAVASCRIPT ════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+const API = '';
+let logWs = null, logTailing = false;
+let scripts = [];
+let _wifiSSID = '';
+let _editingUser = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function $(id){ return document.getElementById(id); }
+function toast(msg, err=false){
+  const el=$('toast');
+  el.textContent=(err?'✗ ':'✓ ')+msg;
+  el.className='toast show'+(err?' error':'');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.className='toast',3500);
+}
+async function api(path, method='GET', body=null){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  if(!r.ok && r.status===403) return {ok:false,error:403};
+  try{ return await r.json(); }catch(e){ return {ok:false,error:r.status}; }
+}
+function led(id, state){ const el=$(id); if(el) el.className='led '+state; }
+function ledOk(id){ led(id,'green'); } function ledErr(id){ led(id,'red'); }
+function ledWait(id){ led(id,'amber'); } function ledOff(id){ led(id,'dim'); }
+function openModal(id){ $(id).classList.add('show'); }
+function closeModal(id){ $(id).classList.remove('show'); }
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+function tickClock(){
+  const n=new Date();
+  const c=$('clock'); if(c) c.textContent=n.toLocaleTimeString('en-US',{hour12:false})+'  '+n.toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'}).toUpperCase();
+}
+tickClock(); setInterval(tickClock,1000);
+
+// Show/hide desktop header items based on viewport width
+function applyHeaderLayout(){
+  const auth=document.getElementById('hdr-auth');
+  const isDesktop=window.innerWidth>768;
+  if(auth && auth._shouldShow){
+    auth.style.display=isDesktop?'flex':'none';
+  }
+}
+window.addEventListener('resize', applyHeaderLayout);
+
+// ── Section nav ───────────────────────────────────────────────────────────────
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.style.display='none');
+  document.querySelectorAll('.snav button').forEach(b=>b.classList.remove('on'));
+  const sec=$(id); if(sec) sec.style.display='block';
+  const btn=document.querySelector(`.snav button[data-s="${id}"]`);
+  if(btn) btn.classList.add('on');
+  window.scrollTo(0,0);
+  // Init terminal on first visit, fit on subsequent visits
+  if(id==='s-term'){ if(window.initTerm) window.initTerm(); else setTimeout(fitTerm,50); }
+  // Start session poller if on logs
+  if(id==='s-logs') startSessionPoller();
+  else stopSessionPoller();
+}
+
+$('snav').addEventListener('click',function(e){
+  const btn=e.target.closest('button[data-s]');
+  if(!btn) return;
+  showSection(btn.dataset.s);
+});
+
+function navTo(id){ toggleDrawer(); showSection(id); }
+
+// ── Mobile drawer ─────────────────────────────────────────────────────────────
+function toggleDrawer(){
+  const d=$('drawer'), h=$('hamburger');
+  d.classList.toggle('open'); h.classList.toggle('open');
+}
+$('drawer').addEventListener('click',function(e){ if(e.target===this) toggleDrawer(); });
+
+// ── Sparklines ────────────────────────────────────────────────────────────────
+const hist={cpu:[],mem:[],vmem:[],disk:[]}, MAX=60;
+function push(k,v){ hist[k].push(v); if(hist[k].length>MAX) hist[k].shift(); }
+function spark(id,data,maxV,color='#1ec024'){
+  const c=$(id); if(!c) return;
+  const dpr=window.devicePixelRatio||1, W=c.offsetWidth||200, H=c.offsetHeight||40;
+  c.width=W*dpr; c.height=H*dpr;
+  const ctx=c.getContext('2d'); ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
+  if(data.length<2) return;
+  const mx=maxV||Math.max(...data,1), step=W/(MAX-1);
+  const pts=data.map((v,i)=>[i*step, H-(v/mx)*H*0.88]);
+  ctx.beginPath(); ctx.moveTo(0,H);
+  pts.forEach(([x,y])=>ctx.lineTo(x,y));
+  ctx.lineTo(pts[pts.length-1][0],H); ctx.closePath();
+  ctx.fillStyle='rgba(30,192,36,0.09)'; ctx.fill();
+  ctx.beginPath();
+  pts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+  ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.stroke();
+  const[lx,ly]=pts[pts.length-1];
+  ctx.beginPath(); ctx.arc(lx,ly,2,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
+}
+
+// ── Metrics ───────────────────────────────────────────────────────────────────
+async function refreshMetrics(){
+  try{
+    const d=await api('/api/system/metrics');
+    if(!d||d.cpu_pct===undefined) return;
+    push('cpu',d.cpu_pct);
+    $('cpu-val').innerHTML=`${Math.round(d.cpu_pct)}<span class="u">%</span>`;
+    $('cpu-lbl').textContent=d.cpu_pct+'%';
+    spark('cpu-spark',hist.cpu,100,d.cpu_pct>80?'#ff4444':d.cpu_pct>60?'#ffaa00':'#1ec024');
+    ledOk('led-cpu');
+    push('mem',d.mem_used_mb);
+    $('mem-val').innerHTML=`${d.mem_used_mb}<span class="u">MB</span>`;
+    $('mem-lbl').textContent=d.mem_pct+'%';
+    spark('mem-spark',hist.mem,d.mem_total_mb);
+    ledOk('led-mem');
+    push('vmem',d.swap_used_mb);
+    $('vmem-val').innerHTML=`${d.swap_used_mb}<span class="u">MB</span>`;
+    $('vmem-lbl').textContent=d.swap_pct+'%';
+    spark('vmem-spark',hist.vmem,Math.max(d.swap_total_mb,100),d.swap_pct>50?'#ffaa00':'#1ec024');
+    ledOk('led-vmem');
+    push('disk',d.disk_used_gb);
+    $('disk-val').innerHTML=`${d.disk_used_gb}<span class="u">GB</span>`;
+    $('disk-lbl').textContent=d.disk_pct+'%';
+    spark('disk-spark',hist.disk,d.disk_total_gb,d.disk_pct>85?'#ff4444':'#1ec024');
+    const bar=$('disk-bar');
+    bar.style.width=d.disk_pct+'%';
+    bar.className='bar-fill'+(d.disk_pct>90?' danger':d.disk_pct>75?' warn':'');
+    ledOk('led-disk');
+  }catch(e){}
+}
+
+async function refreshInfo(){
+  try{
+    const d=await api('/api/system/info');
+    if(!d||d.ok===false){ ledErr('led-info'); return; }
+    ledOk('led-info'); ledOk('led-hostname');
+    const map={
+      'cpu-model':'cpu_model','cpu-cores':'cpu_cores','cpu-arch':'cpu_arch','cpu-temp':'cpu_temp',
+      'os-name':'os_name','os-kernel':'os_kernel','os-hostname':'hostname','os-uptime':'uptime',
+      'net-ip':'lan_ip','net-iface':'lan_iface','net-mac':'lan_mac','net-status':'lan_status'
+    };
+    Object.entries(map).forEach(([id,key])=>{ const el=$(id); if(el&&d[key]) el.textContent=d[key]; });
+    if($('ident-current')) $('ident-current').textContent=d.hostname||'--';
+    // Perf section extras
+    if(d.cpu_temp){
+      const m=d.cpu_temp.match(/([\d.]+)/);
+      if(m){
+        const t=parseFloat(m[1]);
+        $('cpu-temp-val').innerHTML=`${t}<span class="u">°C</span>`;
+        $('cpu-temp-sub').textContent=t>70?'⚠ THROTTLING RISK':t>60?'WARM':'NOMINAL';
+      }
+    }
+    if(d.uptime) $('perf-uptime').textContent=d.uptime;
+    window._hostname=d.hostname;
+  }catch(e){}
+}
+
+// ── Diagnostics ───────────────────────────────────────────────────────────────
+async function diagPing(){
+  const h=$('diag-host').value.trim(); if(!h){toast('Enter a host',true);return;}
+  $('diag-out').textContent='Pinging '+h+'...'; ledWait('led-network');
+  const d=await api('/api/diag/ping','POST',{host:h});
+  $('diag-out').textContent=d.output||d.error;
+  d.success?ledOk('led-network'):ledErr('led-network');
+}
+async function diagTrace(){
+  const h=$('diag-host').value.trim(); if(!h){toast('Enter a host',true);return;}
+  $('diag-out').textContent='Tracing to '+h+'...'; ledWait('led-network');
+  const d=await api('/api/diag/traceroute','POST',{host:h});
+  $('diag-out').textContent=d.output||d.error; ledOk('led-network');
+}
+async function diagPort(){
+  const h=$('diag-host').value.trim(), p=$('diag-port').value||9100;
+  if(!h){toast('Enter a host',true);return;}
+  const d=await api('/api/diag/portcheck','POST',{host:h,port:parseInt(p)});
+  $('diag-out').textContent=d.open?`✓ ${h}:${p} OPEN`:`✗ ${h}:${p} CLOSED / UNREACHABLE`;
+  d.open?ledOk('led-network'):ledErr('led-network');
+}
+
+async function loadProcs(){
+  const d=await api('/api/diag/processes');
+  if(d&&d.ok){ ledOk('led-procs'); const pp=$('perf-procs'); if(pp) pp.textContent=d.processes.length; }
+  else ledErr('led-procs');
+  const tbody=$('proc-tbody');
+  if(!d||!d.ok){tbody.innerHTML=`<tr><td colspan="6" style="color:var(--red);padding:10px">${d&&d.error||'Error'}</td></tr>`;return;}
+  tbody.innerHTML=d.processes.map(p=>{
+    const cls=parseFloat(p.cpu)>50?'cpu-hot':parseFloat(p.cpu)>20?'cpu-warm':'';
+    return `<tr><td style="color:var(--dim)">${p.user}</td><td>${p.pid}</td><td class="${cls}">${p.cpu}</td><td style="color:var(--dim)">${p.mem}</td><td style="color:var(--text)">${p.cmd}</td><td><button class="ibtn danger sm" onclick="killProc('${p.pid}')">KILL</button></td></tr>`;
+  }).join('');
+}
+
+async function killProc(pid){
+  confirmAction(`Kill PID ${pid}?`, async ()=>{
+    const d=await api('/api/diag/kill','POST',{pid});
+    d.ok?toast(`Killed PID ${pid}`):toast(d.error,true);
+    setTimeout(loadProcs,800);
+  });
+}
+
+async function loadHardware(){
+  const d=await api('/api/diag/hardware');
+  d&&d.ok?ledOk('led-hardware'):ledErr('led-hardware');
+  $('hw-throttle').textContent=d.throttle||'--';
+  $('hw-usb').textContent=d.usb||'--';
+  $('hw-gpio').textContent=d.gpio||'--';
+  $('hw-i2c').textContent=d.i2c||'--';
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────────
+async function loadLogServices(){
+  const d=await api('/api/logs/services');
+  if(!d.ok) return;
+  const sel=$('log-svc-sel');
+  sel.innerHTML=d.services.map(s=>`<option value="${s}">${s}</option>`).join('');
+  for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value==='pil0t-web'){sel.selectedIndex=i;break;} }
+}
+
+function onLogTypeChange(){
+  const t=$('log-type').value;
+  $('log-svc-sel').style.display=t==='service'?'':'none';
+  $('log-file-path').style.display=t==='file'?'':'none';
+  if(t==='sku'){
+    $('log-svc-sel').style.display='none';
+    $('log-file-path').style.display='none';
+    fetch('/api/log').then(r=>r.json()).then(d=>{
+      const box=$('log-box'); box.innerHTML='';
+      (d.lines||[]).forEach(l=>{ const div=document.createElement('div'); div.className='log-line'; div.textContent=l; box.appendChild(div); });
+      box.scrollTop=box.scrollHeight;
+    });
+  }
+}
+
+async function loadLog(){
+  ledWait('led-logs'); stopTail();
+  const type=$('log-type').value, lines=$('log-lines').value||100, filter=$('log-filter').value.toLowerCase();
+  let d;
+  if(type==='service'){
+    const svc=$('log-svc-sel').value;
+    d=await api(`/api/logs/service?name=${encodeURIComponent(svc)}&lines=${lines}`);
+  } else {
+    const path=$('log-file-path').value;
+    d=await api(`/api/logs/file?path=${encodeURIComponent(path)}&lines=${lines}`);
+  }
+  if(!d.ok){ledErr('led-logs');$('log-box').innerHTML=`<span style="color:var(--red)">${d.error}</span>`;return;}
+  ledOk('led-logs');
+  renderLogLines(d.lines,filter);
+}
+
+function renderLogLines(lines,filter=''){
+  const box=$('log-box');
+  const filtered=filter?lines.filter(l=>l.toLowerCase().includes(filter)):lines;
+  box.innerHTML=filtered.map(l=>{
+    const isErr=/error|fail|crit|emerg|alert/i.test(l);
+    return `<div class="log-line${isErr?' err':''}">${l.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+  }).join('');
+  box.scrollTop=box.scrollHeight;
+}
+function clearLogView(){ $('log-box').innerHTML=''; stopTail(); }
+function toggleTail(){ logTailing?stopTail():startTail(); }
+
+function startTail(){
+  stopTail();
+  const type=$('log-type').value, svc=$('log-svc-sel').value, path=$('log-file-path').value;
+  const proto=location.protocol==='https:'?'wss':'ws';
+  logWs=new WebSocket(`${proto}://${location.host}/ws/logs`);
+  logWs.onopen=()=>{
+    logWs.send(JSON.stringify(type==='service'?{service:svc}:{path}));
+    logTailing=true;
+    $('log-tail-btn').textContent='STOP'; $('log-tail-btn').style.borderColor='var(--green)';
+    $('log-live-ind').innerHTML='<span class="live-dot"></span>LIVE';
+  };
+  logWs.onmessage=e=>{
+    const box=$('log-box'), filter=$('log-filter').value.toLowerCase();
+    if(!filter||e.data.toLowerCase().includes(filter)){
+      const isErr=/error|fail|crit/i.test(e.data);
+      const div=document.createElement('div'); div.className='log-line'+(isErr?' err':''); div.textContent=e.data;
+      box.appendChild(div);
+      if(box.children.length>500) box.removeChild(box.firstChild);
+      box.scrollTop=box.scrollHeight;
+    }
+  };
+  logWs.onclose=()=>stopTail();
+}
+function stopTail(){
+  if(logWs){try{logWs.send('stop');logWs.close();}catch(e){}logWs=null;}
+  logTailing=false;
+  $('log-tail-btn').textContent='TAIL'; $('log-tail-btn').style.borderColor='';
+  $('log-live-ind').textContent='';
+}
+
+// ── WiFi ──────────────────────────────────────────────────────────────────────
+async function checkWifiLock(){
+  try{
+    const d=await api('/api/network/status');
+    const lock=$('wifi-lock');
+    if(lock) lock.style.display=(d.wlan_ip&&!d.eth_up)?'flex':'none';
+  }catch(e){}
+}
+async function loadWifiCurrent(){
+  const d=await api('/api/wifi/current');
+  d&&d.ok?ledOk('led-wifi'):ledErr('led-wifi');
+  $('wifi-ssid').textContent=d.ssid||'Not connected';
+  $('wifi-ip').textContent=d.ip||'--';
+}
+async function wifiScan(){
+  ledWait('led-wifi-scan');
+  $('wifi-list').innerHTML='<div style="color:var(--dim);text-align:center;padding:20px;font-size:11px;">Scanning...</div>';
+  const d=await api('/api/wifi/scan');
+  if(!d.ok){ledErr('led-wifi-scan');$('wifi-list').innerHTML=`<div style="color:var(--red);padding:10px;font-size:11px;">${d.error}</div>`;return;}
+  ledOk('led-wifi-scan');
+  $('wifi-list').innerHTML=d.networks.map(n=>`
+    <div class="wifi-item" onclick="wifiClickNet('${n.ssid.replace(/'/g,"\\'")}','${n.encrypted}')">
+      <div><div class="wifi-ssid">${n.ssid}</div><div class="wifi-sig">Signal: ${n.signal||'?'} dBm</div></div>
+      <div>${n.encrypted?'<span style="color:var(--amber);font-size:11px;">🔒</span>':''}</div>
+    </div>`).join('');
+}
+function wifiClickNet(ssid,enc){
+  _wifiSSID=ssid;
+  $('wifi-modal-ssid').textContent='Network: '+ssid;
+  $('wifi-pw').value='';
+  openModal('wifi-modal');
+}
+async function wifiConnect(){
+  const password=$('wifi-pw').value;
+  closeModal('wifi-modal'); toast('Connecting to '+_wifiSSID+'...');
+  const d=await api('/api/wifi/connect','POST',{ssid:_wifiSSID,password});
+  d.ok&&d.connected?toast('Connected to '+_wifiSSID):toast(d.error||'Failed to connect',true);
+  loadWifiCurrent();
+}
+async function wifiClear(){
+  const d=await api('/api/wifi/clear','POST');
+  d.ok?toast('All WiFi profiles cleared'):toast(d.error,true); loadWifiCurrent();
+}
+async function wifiDisconnect(){
+  const d=await api('/api/wifi/disconnect','POST');
+  d.ok?toast('Disconnected'):toast(d.error,true); loadWifiCurrent();
+}
+
+// ── Scripts ───────────────────────────────────────────────────────────────────
+async function loadScripts(){
+  const d=await api('/api/scripts/list');
+  d&&d.ok?ledOk('led-scripts'):ledErr('led-scripts');
+  scripts=d.scripts||[]; renderScripts();
+}
+function renderScripts(){
+  const el=$('script-list');
+  if(!scripts.length){el.innerHTML='<div style="color:var(--dim);font-size:11px;">No saved scripts. Click + ADD to create one.</div>';return;}
+  el.innerHTML=scripts.map((s,i)=>`
+    <div class="script-item">
+      <div class="script-name">${s.name}</div>
+      <div class="script-cmd">${s.cmd}</div>
+      <button class="ibtn primary sm" onclick="runScript(${i})" style="flex-shrink:0">RUN</button>
+      <button class="ibtn danger sm" onclick="deleteScript(${i})" style="flex-shrink:0">✕</button>
+    </div>`).join('');
+}
+function showAddScript(){
+  $('script-modal-title').textContent='ADD SCRIPT';
+  $('script-name').value=''; $('script-cmd-input').value='';
+  openModal('script-modal');
+}
+async function saveScript(){
+  const name=$('script-name').value.trim(), cmd=$('script-cmd-input').value.trim();
+  if(!name||!cmd){toast('Name and command required',true);return;}
+  scripts.push({name,cmd});
+  await api('/api/scripts/save','POST',{scripts});
+  closeModal('script-modal'); renderScripts(); toast('Script saved');
+}
+async function deleteScript(i){ scripts.splice(i,1); await api('/api/scripts/save','POST',{scripts}); renderScripts(); }
+async function runScript(i){
+  const s=scripts[i], out=$('script-out');
+  out.textContent=`Running: ${s.cmd}\n...`;
+  const d=await api('/api/scripts/run','POST',{cmd:s.cmd});
+  out.textContent=`$ ${s.cmd}\n\n${d.stdout||''}${d.stderr?'\n[stderr]\n'+d.stderr:''}`;
+  out.textContent+=`\n[exit: ${d.returncode}]`;
+  d.returncode===0?toast(`${s.name} done`):toast(`${s.name} exited ${d.returncode}`,true);
+}
+
+// ── Env editor ────────────────────────────────────────────────────────────────
+async function loadEnv(){
+  const path=$('env-path').value;
+  const d=await api(`/api/env/read?path=${encodeURIComponent(path)}`);
+  if(!d.ok){ledErr('led-env');toast(d.error,true);return;}
+  ledOk('led-env'); $('env-raw').value=d.raw||''; toast('Loaded '+path);
+}
+async function saveEnv(){
+  const path=$('env-path').value, raw=$('env-raw').value;
+  const d=await api('/api/env/save','POST',{path,raw});
+  d.ok?toast('Saved to '+path):toast(d.error,true);
+}
+
+// ── Cron ──────────────────────────────────────────────────────────────────────
+async function loadCron(){
+  const d=await api('/api/cron/list');
+  d&&d.ok?ledOk('led-cron'):ledErr('led-cron');
+  if(!d.ok){toast(d.error,true);return;}
+  $('cron-raw').value=d.raw||'';
+  const tbody=$('cron-tbody');
+  if(!d.jobs.length){tbody.innerHTML='<tr><td colspan="3" style="padding:10px;color:var(--dim)">No cron jobs</td></tr>';return;}
+  tbody.innerHTML=d.jobs.map((j,i)=>{
+    const parts=j.split(/\s+/), sched=parts.slice(0,5).join(' '), cmd=parts.slice(5).join(' ');
+    return `<tr><td style="color:var(--amber);white-space:nowrap;font-size:11px;">${sched}</td><td style="color:var(--text);font-size:11px;">${cmd}</td><td><button class="ibtn sm" onclick="delCron(${i})" style="padding:2px 7px;font-size:10px;">✕</button></td></tr>`;
+  }).join('');
+}
+async function delCron(i){
+  const raw=$('cron-raw').value;
+  const lines=raw.split('\n').filter(l=>l.trim()&&!l.startsWith('#'));
+  lines.splice(i,1); $('cron-raw').value=lines.join('\n')+'\n'; await saveCron();
+}
+async function saveCron(){
+  const d=await api('/api/cron/save','POST',{raw:$('cron-raw').value});
+  d.ok?toast('Crontab saved'):toast(d.error,true); loadCron();
+}
+
+// ── Git ───────────────────────────────────────────────────────────────────────
+async function loadGit(){
+  const path=$('git-path').value;
+  const d=await api(`/api/git/status?path=${encodeURIComponent(path)}`);
+  if(!d.ok){ledErr('led-git');$('git-branch').textContent='Not a git repo';return;}
+  ledOk('led-git');
+  $('git-branch').textContent=d.branch||'(detached)';
+  $('git-remote').textContent=d.remote||'No remote';
+  $('git-status').textContent=d.status||'Clean working tree';
+  $('git-log').textContent=d.log||'No commits';
+}
+async function gitAction(action){
+  const path=$('git-path').value, out=$('git-out');
+  out.className='out scroll show'; out.textContent=`Running git ${action}...`;
+  const d=await api('/api/git/action','POST',{path,action});
+  out.textContent=d.output||d.error; if(d.ok) loadGit();
+}
+
+// ── Packages ──────────────────────────────────────────────────────────────────
+function setBadge(id,text,cls){
+  const btn=$(id); if(!btn) return;
+  const lbl=btn.dataset.lbl||(btn.dataset.lbl=btn.textContent.replace(/[^\x20-\x7E]/g,'').trim().split('\n')[0].trim());
+  btn.innerHTML=`<span class="btn-inner">${lbl}<span class="badge-pill ${cls}">${text}</span></span>`;
+}
+async function streamPkg(url,title){
+  const wrap=$('pkg-wrap'), out=$('pkg-out'), spin=$('pkg-spinner'), ttl=$('pkg-title');
+  wrap.style.display=''; out.textContent=''; spin.style.display='';
+  if(ttl) ttl.textContent=title; ledWait('led-packages');
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'}});
+    const reader=r.body.getReader(), dec=new TextDecoder();
+    while(true){
+      const{done,value}=await reader.read(); if(done) break;
+      out.textContent+=dec.decode(value,{stream:true}); out.scrollTop=out.scrollHeight;
+    }
+    spin.style.display='none'; ledOk('led-packages'); toast(title+' complete'); refreshUpdateStatus();
+  }catch(e){
+    out.textContent+='\n[Error: '+e.message+']'; spin.style.display='none'; ledErr('led-packages'); toast(title+' failed',true);
+  }
+}
+async function sysUpdate(){ streamPkg('/api/system/update/stream','APT UPDATE'); }
+async function sysUpgrade(){ confirmAction('Run apt-get upgrade? May take several minutes.',()=>streamPkg('/api/system/upgrade/stream','APT UPGRADE')); }
+async function loadDeviceMode(){
+  try{
+    const d=await api('/api/device/config');
+    if(!d.ok) return;
+    const isZebra=d.zebra_mode;
+    const cur=document.getElementById('devmode-current');
+    if(cur) cur.textContent='Current mode: '+(isZebra?'PRINT SERVER':'STANDARD');
+    ledOk('led-devmode');
+    const cs=document.getElementById('maint-card-standard');
+    const cz=document.getElementById('maint-card-zebra');
+    const sel='border-color:var(--green);background:var(--green-glow);box-shadow:0 0 12px rgba(30,192,36,0.1);';
+    const unsel='border:1px solid var(--border);background:var(--bg);';
+    if(cs) cs.style.cssText=cs.style.cssText.replace(/border[^;]*;|background[^;]*;|box-shadow[^;]*;/g,'')+(isZebra?unsel:sel);
+    if(cz) cz.style.cssText=cz.style.cssText.replace(/border[^;]*;|background[^;]*;|box-shadow[^;]*;/g,'')+(isZebra?sel:unsel);
+  }catch(e){}
+}
+
+async function setDeviceMode(mode){
+  const d=await api('/api/device/config','POST',{zebra_mode:mode==='zebra'});
+  if(d.ok){
+    toast('Mode set to '+(mode==='zebra'?'PRINT SERVER':'STANDARD'));
+    loadDeviceMode();
+  } else toast(d.error,true);
+}
+
+async function sysTrash(){ const d=await api('/api/system/trash','POST'); d.ok?toast('Trash emptied'):toast(d.error,true); }
+async function sysReboot(){ await api('/api/system/reboot','POST'); showSplash(false); }
+async function sysShutdown(){ await api('/api/system/shutdown','POST'); showSplash(true); }
+
+async function refreshUpdateStatus(){
+  try{
+    const d=await api('/api/system/update-status');
+    if(d.count===null||d.count===undefined){setBadge('btn-update','CHECKING','dim');setBadge('btn-upgrade','CHECKING','dim');return;}
+    if(d.count===0){setBadge('btn-update','UP TO DATE','ok');setBadge('btn-upgrade','UP TO DATE','ok');}
+    else{setBadge('btn-update',`${d.count} AVAILABLE`,'has');setBadge('btn-upgrade',`${d.count} TO UPGRADE`,'has');}
+    if(d.checked) $('update-checked').textContent=`Last checked: ${d.checked}`;
+  }catch(e){}
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function loadSessionInfo(){
+  try{
+    const d=await api('/api/auth/me');
+    if(d.kicked){ location.href='/login?kicked=1'; return; }
+    const auth=$('hdr-auth'), user=$('hdr-user'), mob=$('mobile-logout');
+    const me=$('auth-me');
+    if(d.ok){
+      if(auth){ auth._shouldShow=true; auth.style.display=window.innerWidth>768?'flex':'none'; }
+      if(user) user.textContent=d.user.username.toUpperCase();
+      if(mob) mob.style.display='';
+      if(me) me.textContent=d.user.username+' ('+d.user.role+')';
+    } else {
+      if(auth) auth.style.display='none';
+      if(mob) mob.style.display='none';
+      if(me) me.textContent='Not logged in';
+    }
+  }catch(e){}
+}
+
+async function loadUsers(){
+  try{
+    const d=await api('/api/auth/users');
+    if(!d.ok){ledOff('led-users');return;} ledOk('led-users');
+    const tbody=$('user-tbody');
+    tbody.innerHTML=d.users.map(u=>`
+      <tr>
+        <td style="color:var(--text);font-size:12px;">${u.username}</td>
+        <td style="color:${u.role==='admin'?'var(--amber)':'var(--dim)'};font-size:11px;">${u.role}</td>
+        <td><div style="display:flex;gap:4px;">
+          <button class="ibtn sm" data-edit="${u.username}" data-role="${u.role}">EDIT</button>
+          ${u.username!=='admin'?`<button class="ibtn danger sm" data-del="${u.username}">DEL</button>`:''}
+        </div></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>editUser(b.dataset.edit,b.dataset.role)));
+    tbody.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>confirmAction('Delete user '+b.dataset.del+'?',()=>deleteUser(b.dataset.del))));
+  }catch(e){ledErr('led-users');}
+}
+
+function showAddUser(){
+  _editingUser=null; $('user-modal-title').textContent='ADD USER';
+  $('user-username').value=''; $('user-username').disabled=false;
+  $('user-password').value=''; $('user-role').value='user';
+  openModal('user-modal');
+}
+function editUser(username,role){
+  _editingUser=username; $('user-modal-title').textContent='EDIT USER';
+  $('user-username').value=username; $('user-username').disabled=true;
+  $('user-password').value=''; $('user-role').value=role;
+  openModal('user-modal');
+}
+async function saveUser(){
+  const username=$('user-username').value.trim(), password=$('user-password').value, role=$('user-role').value;
+  if(!username){toast('Username required',true);return;}
+  let d;
+  if(_editingUser) d=await api('/api/auth/users/update','POST',{username,password,role});
+  else{ if(!password){toast('Password required',true);return;} d=await api('/api/auth/users/add','POST',{username,password,role}); }
+  closeModal('user-modal');
+  d.ok?toast(_editingUser?'User updated':'User created'):toast(d.error,true);
+  loadUsers();
+}
+async function deleteUser(username){
+  const d=await api('/api/auth/users/delete','POST',{username});
+  d.ok?toast('User deleted'):toast(d.error,true); loadUsers();
+}
+async function loadAuthConfig(){
+  try{
+    const d=await api('/api/auth/config'); if(!d.ok) return;
+    const c=d.config, g=id=>{const el=$(id);return el?el.checked:true};
+    $('cfg-guest-print').checked = c.guest_print!==false;
+    $('cfg-system').checked      = c.protected?.system!==false;
+    $('cfg-files').checked       = c.protected?.files!==false;
+    $('cfg-api').checked         = c.protected?.api_system!==false;
+    $('cfg-reboot-auth').checked = c.protected?.api_reboot!==false;
+    $('cfg-delete-auth').checked = c.protected?.delete_auth===true;
+  }catch(e){}
+}
+async function saveAuthConfig(){
+  const chk=id=>{const el=$(id);return el?el.checked:true};
+  const cfg={guest_print:chk('cfg-guest-print'),protected:{
+    system:chk('cfg-system'),files:chk('cfg-files'),api_system:chk('cfg-api'),
+    api_reboot:chk('cfg-reboot-auth'),delete_auth:chk('cfg-delete-auth')
+  }};
+  const d=await api('/api/auth/config','POST',cfg);
+  d.ok?toast('Access settings saved'):toast(d.error,true);
+}
+
+let _sessPoll=null;
+function startSessionPoller(){ stopSessionPoller(); _sessPoll=setInterval(loadSessions,5000); }
+function stopSessionPoller(){ if(_sessPoll){clearInterval(_sessPoll);_sessPoll=null;} }
+
+async function loadSessions(){
+  try{
+    const d=await api('/api/auth/sessions'); if(!d.ok) return;
+    const cnt=$('session-count'); if(cnt) cnt.textContent=d.sessions.length+' active';
+    const tbody=$('session-tbody');
+    if(!d.sessions.length){
+      tbody.innerHTML='<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--dim)">No active sessions</td></tr>';
+    } else {
+      tbody.innerHTML=d.sessions.map(s=>`
+        <tr>
+          <td style="color:var(--green);font-size:11px;">${s.username}</td>
+          <td style="color:var(--dim);font-size:11px;">${s.time}</td>
+          <td style="color:var(--dim);font-size:11px;">${s.ip}</td>
+          <td><button class="ibtn sm" data-kick="${s.id}" style="border-color:rgba(255,68,68,0.3);color:#ff8888;">KICK</button></td>
+        </tr>`).join('');
+      tbody.querySelectorAll('[data-kick]').forEach(b=>b.addEventListener('click',()=>
+        confirmAction('Force logout this session?',async()=>{
+          await api('/api/auth/kick','POST',{id:b.dataset.kick});
+          toast('Session terminated'); loadSessions();
+        })
+      ));
+    }
+    const hist=$('login-hist');
+    if(hist&&d.history){
+      hist.innerHTML='';
+      d.history.slice().reverse().forEach(h=>{
+        const div=document.createElement('div'); div.className='log-line';
+        const col=h.action==='login'?'var(--green)':'var(--amber)';
+        div.innerHTML=`<span style="color:var(--dim)">${h.time}</span>  <span style="color:${col}">${h.action.toUpperCase()}</span>  <span>${h.username}</span>  <span style="color:var(--dim)">${h.ip}</span>`;
+        hist.appendChild(div);
+      });
+      if(!d.history.length) hist.innerHTML='<div style="color:var(--dim);padding:14px;font-size:11px;">No history yet</div>';
+    }
+  }catch(e){}
+}
+
+// ── Branding ──────────────────────────────────────────────────────────────────
+async function loadBranding(){
+  const d=await api('/api/branding'); if(!d||!d.ok) return;
+  $('brand-title').value=d.title||''; $('brand-subtitle').value=d.subtitle||'';
+  updateBrandPreview(); applyBranding(d);
+  ledOk('led-branding');
+}
+function updateBrandPreview(){
+  const t=$('brand-title').value||'PiL0t', s=$('brand-subtitle').value||'PRINT SERVER';
+  $('brand-prev-t').textContent=t; $('brand-prev-s').textContent=s;
+}
+function applyBranding(b){
+  const logo=$('header-logo'), sub=$('header-sub');
+  if(logo&&b.title) logo.childNodes[0].textContent=b.title+' ';
+  if(sub&&b.subtitle) sub.textContent=b.subtitle;
+  if(b.title) document.title='PiL0t — '+b.title;
+}
+async function saveBranding(){
+  const title=$('brand-title').value.trim(), subtitle=$('brand-subtitle').value.trim();
+  if(!title){toast('Title required',true);return;}
+  const d=await api('/api/branding','POST',{title,subtitle});
+  if(d.ok){toast('Branding saved');applyBranding({title,subtitle});}
+  else toast(d.error,true);
+}
+
+async function saveHostname(){
+  const hostname=$('ident-hostname').value.trim();
+  if(!hostname){toast('Enter a hostname',true);return;}
+  const out=$('hostname-out'); out.className='out scroll show'; out.textContent='Applying...';
+  const d=await api('/api/system/hostname','POST',{hostname});
+  out.textContent=d.output||d.error;
+  if(d.ok){toast('Hostname set to '+hostname);$('ident-current').textContent=hostname;$('ident-hostname').value='';}
+  else toast(d.error,true);
+}
+
+// ── Confirm ───────────────────────────────────────────────────────────────────
+let _confirmCb=null;
+function confirmAction(msg,cb){
+  _confirmCb=cb; $('confirm-msg').textContent=msg; openModal('confirm-modal');
+  $('confirm-yes').onclick=confirmYes;
+}
+function confirmYes(){ closeModal('confirm-modal'); if(_confirmCb){_confirmCb();_confirmCb=null;} }
+function confirmNo(){ closeModal('confirm-modal'); _confirmCb=null; }
+
+// ── Splash ────────────────────────────────────────────────────────────────────
+function showSplash(isShutdown){
+  const splash=$('reboot-splash'); splash.classList.add('show');
+  $('splash-title').textContent=isShutdown?'SHUTTING DOWN':'REBOOTING';
+  if(isShutdown){
+    const quotes=['Powering down systems...','Telling services to wrap it up...','Cleaning up...','Going to sleep...','Lights out.'];
+    let qi=0; $('splash-status').textContent=quotes[0]; $('splash-count').textContent='';
+    $('splash-bar').style.width='100%';
+    const t=setInterval(()=>{
+      qi++;
+      if(qi<quotes.length){ $('splash-status').textContent=quotes[qi]; $('splash-bar').style.width=((1-qi/quotes.length)*100)+'%'; }
+      else{ clearInterval(t); $('splash-status').textContent='System offline.'; $('splash-title').textContent='SYSTEM OFFLINE'; $('splash-bar').style.width='0%'; }
+    },2000); return;
+  }
+  let remaining=40; $('splash-count').textContent=remaining; $('splash-bar').style.width='100%';
+  $('splash-status').textContent='Waiting for server...';
+  const tick=setInterval(()=>{
+    remaining--;
+    $('splash-count').textContent=Math.max(remaining,0);
+    $('splash-bar').style.width=(remaining/40*100)+'%';
+    if(remaining<=0){ clearInterval(tick); $('splash-count').textContent=''; $('splash-status').textContent='Reconnecting...'; tryReconnect(); }
+  },1000);
+}
+function tryReconnect(){
+  let attempts=0;
+  const iv=setInterval(async()=>{
+    attempts++; $('splash-status').textContent='Reconnecting... attempt '+attempts;
+    try{
+      const r=await fetch('/api/status',{signal:AbortSignal.timeout(3000)});
+      if(r.ok){ clearInterval(iv); $('splash-status').textContent='Back online! Reloading...'; setTimeout(()=>location.reload(),800); }
+    }catch(e){}
+  },2000);
+}
+
+// ── Logout buttons ────────────────────────────────────────────────────────────
+['logout-btn','logout-btn-2','mobile-logout'].forEach(id=>{
+  const el=$(id); if(el) el.addEventListener('click',()=>fetch('/api/auth/logout',{method:'POST'}).then(()=>location.href='/login'));
+});
+
+// ── Boot sequence ─────────────────────────────────────────────────────────────
+// Init section nav — show only first section, hide rest
+(function(){
+  var goto=sessionStorage.getItem('gotoSection');
+  sessionStorage.removeItem('gotoSection');
+  if(goto==='s-files'){ location.href='/files'; return; }
+  showSection(goto||'s-perf');
+})();
+
+// Load data
+refreshMetrics();
+refreshInfo();
+refreshUpdateStatus();
+loadBranding();
+setTimeout(()=>{
+  try{loadSessionInfo();}catch(e){}
+  try{loadUsers();}catch(e){}
+  try{loadAuthConfig();}catch(e){}
+},500);
+setTimeout(()=>{
+  try{loadProcs();}catch(e){}
+  try{loadHardware();}catch(e){}
+  try{loadLogServices();}catch(e){}
+  try{loadWifiCurrent();}catch(e){}
+  try{checkWifiLock();}catch(e){}
+  try{loadScripts();}catch(e){}
+  try{loadCron();}catch(e){}
+  try{loadDeviceMode();}catch(e){}
+},1000);
+
+setInterval(refreshMetrics,2000);
+setInterval(refreshInfo,30000);
+setInterval(refreshUpdateStatus,60000);
+setInterval(loadProcs,10000);
+setInterval(async()=>{
+  try{const d=await api('/api/auth/me');if(d.kicked)location.href='/login?kicked=1';}catch(e){}
+},30000);
+</script>
+
+<!-- ══ XTERM TERMINAL ════════════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<script>
+// Terminal is lazy-initialised on first click of the TERMINAL tab.
+// Calling term.open() while hidden causes xterm to inject a 50000px wide
+// measurement span that collapses all other sections.
+(function(){
+  var term = null, fit = null, ws = null, termInited = false;
+  var container = document.getElementById('term-container');
+
+  function sendResize(){
+    if(ws && ws.readyState === 1){
+      try{ ws.send(JSON.stringify({type:'resize',cols:term.cols,rows:term.rows})); }catch(e){}
+    }
+  }
+
+  function fitTerm(){
+    if(!termInited) return;
+    var headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 52;
+    var snavH   = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--snav-h'))   || 40;
+    var avail   = window.innerHeight - headerH - snavH - 36 - 40 - 16;
+    container.style.height = Math.max(avail, 200) + 'px';
+    fit.fit();
+    sendResize();
+  }
+  window.fitTerm = fitTerm;
+
+  function connect(){
+    if(ws){ try{ws.close();}catch(e){} ws=null; }
+    var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(proto + '://' + location.host + '/ws/terminal');
+    ws.onopen    = function(){ term.write('\r\n\x1b[32m── connected ──\x1b[0m\r\n'); term.focus(); fitTerm(); sendResize(); };
+    ws.onmessage = function(e){ term.write(e.data); };
+    ws.onclose   = function(){ term.write('\r\n\x1b[2m[disconnected]\x1b[0m\r\n'); };
+    ws.onerror   = function(){ term.write('\r\n\x1b[31m[connection error]\x1b[0m\r\n'); };
+  }
+
+  function initTerm(){
+    if(termInited) return;
+    termInited = true;
+    term = new Terminal({
+      cursorBlink: true, scrollback: 2000,
+      theme: { background:'#000000', foreground:'#a8d4a9', cursor:'#1ec024', cursorAccent:'#000',
+               selectionBackground:'rgba(30,192,36,0.25)', black:'#050a05', brightBlack:'#2a3a2a',
+               green:'#1ec024', brightGreen:'#4fff55' },
+      fontFamily:"'Courier New', 'Share Tech Mono', monospace",
+      fontSize: 13, lineHeight: 1.2, allowTransparency: false,
+      rendererType: 'canvas',
+    });
+    fit = new FitAddon.FitAddon();
+    term.loadAddon(fit);
+    term.open(container);
+    // Force a remeasure after a tick — fixes zero-width spaces when
+    // the monospace font hasn't been measured yet at open() time
+    setTimeout(function(){
+      term.refresh(0, term.rows - 1);
+      fitTerm();
+    }, 200);
+    term.onData(function(data){ if(ws && ws.readyState === 1) ws.send(data); });
+    term.onResize(function(){ sendResize(); });
+
+    var clearBtn = document.getElementById('term-clear-btn');
+    if(clearBtn) clearBtn.addEventListener('click', function(){ term.reset(); term.focus(); });
+
+    var reconBtn = document.getElementById('term-reconnect-btn');
+    if(reconBtn) reconBtn.addEventListener('click', function(){ term.reset(); connect(); });
+
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden && termInited) fitTerm(); });
+    window.addEventListener('resize', function(){ if(termInited) fitTerm(); });
+
+    connect();
+  }
+
+  // Expose so showSection can call it when TERMINAL tab is clicked
+  window.initTerm = initTerm;
+})();
+</script>
+
+</body>
+</html>

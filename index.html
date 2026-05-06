@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PiL0t — Print</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:#1ec024; --green-dim:#0d6e10; --green-bright:#4fff55;
+  --green-glow:rgba(30,192,36,0.15); --green-glow2:rgba(30,192,36,0.08);
+  --bg:#050a05; --bg2:#080f08; --bg3:#0c160c;
+  --border:rgba(30,192,36,0.2); --border-hi:rgba(30,192,36,0.55);
+  --text:#a8d4a9; --dim:#4a7a4b;
+  --red:#ff4444; --amber:#ffaa00;
+  --header-h:52px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:0;}
+.scanline{position:fixed;top:-100%;left:0;right:0;height:40px;background:linear-gradient(transparent,rgba(30,192,36,0.05),transparent);animation:scan 7s linear infinite;pointer-events:none;z-index:0;}
+@keyframes scan{0%{top:-5%}100%{top:105%}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Header — identical to system/files pages ── */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:var(--header-h);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;color:var(--green);letter-spacing:0.15em;text-shadow:0 0 18px rgba(30,192,36,0.45);text-decoration:none;}
+.logo-sub{color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:400;margin-left:10px;letter-spacing:0.05em;}
+.hdr-right{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--dim);}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);display:inline-block;margin-right:5px;transition:all 0.3s;}
+.status-dot.online{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2.5s infinite;}
+.status-dot.offline{background:var(--red);box-shadow:0 0 6px var(--red);}
+.hdr-btn{padding:5px 10px;border:1px solid var(--border);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;text-decoration:none;transition:all 0.15s;background:transparent;letter-spacing:0.04em;white-space:nowrap;border-radius:1px;}
+.hdr-btn:hover{border-color:var(--green);color:var(--green);}
+
+/* ── Layout ── */
+.main{max-width:1100px;margin:0 auto;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+/* ── Unified Panel — matches system.html exactly ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:2px;overflow:hidden;animation:fadeIn 0.4s ease both;}
+.panel:nth-child(2){animation-delay:0.05s;} .panel:nth-child(3){animation-delay:0.10s;}
+.panel:nth-child(4){animation-delay:0.15s;} .panel:nth-child(5){animation-delay:0.20s;grid-column:1/-1;}
+.panel:nth-child(6){animation-delay:0.25s;grid-column:1/-1;}
+.ph{background:var(--bg3);border-bottom:1px solid var(--border);padding:0 14px;height:36px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--green);letter-spacing:0.12em;display:flex;align-items:center;justify-content:space-between;}
+.ph-l{display:flex;align-items:center;gap:6px;}
+.ph-l::before{content:'▶';font-size:7px;color:var(--green-dim);}
+.ph-sub{font-family:'Share Tech Mono',monospace;font-weight:400;font-size:10px;color:var(--dim);letter-spacing:0;}
+.pb{padding:18px 16px;}
+
+/* ── SKU display ── */
+.sku-big{font-family:'Orbitron',monospace;font-size:clamp(36px,8vw,60px);font-weight:900;color:var(--green);text-shadow:0 0 28px rgba(30,192,36,0.4);line-height:1;letter-spacing:0.05em;margin-bottom:6px;}
+.sku-lbl{font-size:11px;color:var(--dim);letter-spacing:0.1em;margin-bottom:18px;}
+
+/* ── Buttons — unified with system.html ── */
+.btn{display:block;width:100%;padding:10px 16px;background:transparent;border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:13px;cursor:pointer;text-align:left;letter-spacing:0.05em;transition:all 0.15s;margin-bottom:8px;border-radius:1px;}
+.btn:last-child{margin-bottom:0;} .btn::before{content:'> ';color:var(--green-dim);}
+.btn:hover{background:var(--green-glow);border-color:var(--green);color:var(--green-bright);}
+.btn:active{transform:scale(0.98);}
+.btn.primary{border-color:var(--green-dim);color:var(--green);}
+.btn.primary:hover{background:rgba(30,192,36,0.18);border-color:var(--green-bright);}
+.btn.danger{border-color:rgba(255,68,68,0.3);color:var(--red);}
+.btn.danger::before{color:rgba(255,68,68,0.4);}
+.btn.danger:hover{background:rgba(255,68,68,0.1);border-color:var(--red);}
+.btn-sm{padding:6px 12px;background:transparent;border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:0.04em;transition:all 0.15s;white-space:nowrap;border-radius:1px;}
+.btn-sm:hover{background:var(--green-glow);border-color:var(--green);color:var(--green-bright);}
+
+/* ── Inputs ── */
+.irow{display:flex;gap:8px;margin-bottom:10px;align-items:center;}
+.ilbl{font-size:11px;color:var(--dim);letter-spacing:0.08em;min-width:100px;flex-shrink:0;}
+input[type=text],input[type=number]{background:var(--bg);border:1px solid var(--border);color:var(--green-bright);font-family:'Share Tech Mono',monospace;font-size:13px;padding:7px 10px;flex:1;outline:none;border-radius:1px;transition:border-color 0.15s;width:100%;}
+input:focus{border-color:var(--green);box-shadow:0 0 6px rgba(30,192,36,0.1);}
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{
+  -webkit-box-shadow:0 0 0 1000px var(--bg) inset !important;
+  -webkit-text-fill-color:var(--green-bright) !important;
+  caret-color:var(--green-bright);
+  border:1px solid var(--border) !important;
+}
+input[type=password]::-ms-reveal,
+input[type=password]::-webkit-credentials-auto-fill-button{display:none !important;}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+input[type=number]{-moz-appearance:textfield;}
+hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
+
+/* ── Log ── */
+.log-box{background:#000;border:1px solid var(--border);padding:12px 14px;height:200px;overflow-y:auto;font-size:11px;color:var(--dim);line-height:1.75;border-radius:1px;}
+.log-box::-webkit-scrollbar{width:4px;} .log-box::-webkit-scrollbar-thumb{background:var(--green-dim);border-radius:2px;}
+.log-line .ts{color:var(--dim);} .log-line .sku-n{color:var(--green);}
+
+/* ── Confirm modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;align-items:center;justify-content:center;}
+.modal-bg.show{display:flex;}
+.confirm-box{background:#0a0000;border:1px solid rgba(255,68,68,0.5);padding:28px 32px;border-radius:2px;text-align:center;max-width:340px;}
+.cmsg{font-size:14px;color:#ff8888;letter-spacing:0.05em;margin-bottom:20px;line-height:1.5;}
+.confirm-btns{display:flex;gap:10px;justify-content:center;}
+.cyes{padding:9px 28px;background:rgba(255,68,68,0.12);border:1px solid #ff4444;color:#ff4444;font-family:'Share Tech Mono',monospace;font-size:13px;cursor:pointer;letter-spacing:0.1em;border-radius:1px;transition:all 0.15s;}
+.cyes:hover{background:rgba(255,68,68,0.28);}
+.cno{padding:9px 28px;background:transparent;border:1px solid rgba(255,68,68,0.25);color:rgba(255,68,68,0.5);font-family:'Share Tech Mono',monospace;font-size:13px;cursor:pointer;letter-spacing:0.1em;border-radius:1px;}
+.cno:hover{color:#ff8888;}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:28vh;left:50%;transform:translateX(-50%) translateY(8px);padding:9px 22px;background:var(--bg3);border:1px solid var(--border);font-size:13px;color:var(--green);letter-spacing:0.05em;opacity:0;transition:opacity 0.2s,transform 0.2s;z-index:2000;border-radius:1px;max-width:400px;text-align:center;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);} .toast.error{border-color:rgba(255,68,68,0.5);color:var(--red);}
+
+/* ── Reboot splash ── */
+.splash{display:none;position:fixed;inset:0;background:#050a05;z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
+.splash.show{display:flex;}
+.splash-title{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:#1ec024;letter-spacing:0.2em;text-align:center;}
+.splash-count{font-family:'Orbitron',monospace;font-size:72px;font-weight:900;color:#1ec024;text-shadow:0 0 40px rgba(30,192,36,0.5);line-height:1;}
+.splash-status{font-family:'Share Tech Mono',monospace;font-size:12px;color:#4a7a4b;text-align:center;letter-spacing:0.06em;}
+.splash-bar-track{width:280px;height:3px;background:#0c160c;border-radius:2px;overflow:hidden;}
+.splash-bar{height:100%;background:#1ec024;border-radius:2px;transition:width 1s linear;}
+
+@media(max-width:680px){
+  .main{grid-template-columns:1fr;}
+  .panel:nth-child(5),.panel:nth-child(6){grid-column:1;}
+  .sku-big{font-size:clamp(32px,10vw,48px);}
+  header{padding:0 16px;}
+  .hdr-right .hdr-label{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<header>
+  <a href="/" class="logo" id="header-logo">PiL0t <span class="logo-sub" id="header-sub">PRINT SERVER</span></a>
+  <div class="hdr-right">
+    <div>
+      <span class="status-dot" id="printer-dot"></span>
+      <span id="printer-status" class="hdr-label">CHECKING...</span>
+    </div>
+    <span class="hdr-label">PRINTER: <span id="printer-ip" style="color:var(--green)">--</span></span>
+    <span class="hdr-label">SKU: <span id="header-sku" style="color:var(--green)">--</span></span>
+    <a href="/system" class="hdr-btn">SYS MGT ›</a>
+  </div>
+</header>
+
+<div class="main" id="main-content" style="display:none;">
+
+  <!-- Quick Print -->
+  <div class="panel">
+    <div class="ph"><div class="ph-l">QUICK PRINT</div></div>
+    <div class="pb">
+      <div class="sku-big" id="sku-big">----</div>
+      <div class="sku-lbl">NEXT SKU / CURRENT COUNTER</div>
+      <button class="btn primary" onclick="printNext()">PRINT NEXT SKU</button>
+      <button class="btn" onclick="printReprint()">REPRINT LAST SKU</button>
+      <button class="btn" onclick="printBlank()">PRINT BLANK LABEL</button>
+    </div>
+  </div>
+
+  <!-- Custom Label -->
+  <div class="panel">
+    <div class="ph"><div class="ph-l">CUSTOM LABEL</div></div>
+    <div class="pb">
+      <div class="irow"><span class="ilbl">SKU NUMBER</span><input type="text" id="custom-sku" placeholder="e.g. 2001"></div>
+      <div class="irow"><span class="ilbl">CUSTOM TEXT</span><input type="text" id="custom-text" placeholder="max 38 chars" maxlength="38"></div>
+      <hr class="div">
+      <button class="btn primary" onclick="printCustom()">PRINT CUSTOM LABEL</button>
+    </div>
+  </div>
+
+  <!-- Batch Print -->
+  <div class="panel">
+    <div class="ph"><div class="ph-l">BATCH PRINT</div></div>
+    <div class="pb">
+      <div class="irow"><span class="ilbl">START SKU</span><input type="number" id="batch-start" placeholder="e.g. 1000"></div>
+      <div class="irow"><span class="ilbl">END SKU</span><input type="number" id="batch-end" placeholder="e.g. 1010"></div>
+      <hr class="div">
+      <button class="btn primary" onclick="authGuard(printBatch)">PRINT BATCH</button>
+      <div id="batch-prog" style="font-size:11px;color:var(--dim);margin-top:10px;min-height:16px;"></div>
+    </div>
+  </div>
+
+  <!-- Configuration -->
+  <div class="panel">
+    <div class="ph"><div class="ph-l">CONFIGURATION</div></div>
+    <div class="pb">
+      <div class="irow" style="align-items:center;">
+        <span class="ilbl">PRINT MODE</span>
+        <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:1px;overflow:hidden;flex:1;">
+          <button id="mode-network" onclick="setMode('network')" style="flex:1;padding:6px 0;background:var(--green-dim);border:none;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;">NETWORK</button>
+          <button id="mode-usb" onclick="setMode('usb')" style="flex:1;padding:6px 0;background:transparent;border:none;color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;">USB</button>
+        </div>
+      </div>
+      <div id="cfg-network-fields">
+        <div class="irow"><span class="ilbl">PRINTER IP</span><input type="text" id="cfg-ip" placeholder="10.10.10.249"></div>
+        <div class="irow"><span class="ilbl">PORT</span><input type="number" id="cfg-port" placeholder="9100" style="max-width:90px;"></div>
+      </div>
+      <div id="cfg-usb-fields" style="display:none;">
+        <div class="irow"><span class="ilbl">USB DEVICE</span><input type="text" id="cfg-usb-dev" placeholder="/dev/usb/lp0"></div>
+        <div style="font-size:10px;color:var(--dim);margin-bottom:8px;padding-left:108px;">Usually /dev/usb/lp0 — check with: ls /dev/usb/</div>
+      </div>
+      <button class="btn primary" onclick="authGuard(saveConfig)">SAVE PRINTER CONFIG</button>
+      <hr class="div">
+      <div class="irow"><span class="ilbl">SET SKU TO</span><input type="number" id="cfg-sku" placeholder="e.g. 1490"><button class="btn-sm" onclick="setSKU()">SET</button></div>
+      <button class="btn danger" onclick="authGuard(()=>confirmAction('Reset SKU counter to 2000?', resetSKU))">RESET SKU COUNTER</button>
+    </div>
+  </div>
+
+  <!-- Print Log -->
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-l">PRINT LOG</div>
+      <span class="ph-sub">LAST 50 ENTRIES</span>
+    </div>
+    <div class="pb">
+      <div class="log-box" id="log-box">
+        <span style="color:var(--dim)">Loading...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Controls -->
+  <div class="panel">
+    <div class="ph"><div class="ph-l">SYSTEM CONTROLS</div></div>
+    <div class="pb">
+      <button class="btn primary" onclick="restartTracker()">RESTART PRINT SCRIPT</button>
+      <button class="btn danger" onclick="authGuard(()=>confirmAction('Reboot SRV?', rebootPi))">REBOOT SRV</button>
+      <button class="btn danger" onclick="authGuard(()=>confirmAction('Shut down SRV? Physical access needed to restart.', shutdownPi))">SHUTDOWN SRV</button>
+    </div>
+  </div>
+
+</div><!-- end .main -->
+
+<!-- Login modal -->
+<div class="modal-bg" id="login-modal">
+  <div style="background:var(--bg2);border:1px solid var(--border-hi);padding:28px;min-width:320px;max-width:92vw;border-radius:2px;">
+    <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--green);letter-spacing:0.12em;margin-bottom:16px;">AUTHENTICATION REQUIRED</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.6;">You must be logged in to perform this action.</div>
+    <div style="font-size:10px;color:var(--dim);letter-spacing:0.08em;margin-bottom:5px;">USERNAME</div>
+    <input type="text" id="lm-user" placeholder="username" autocomplete="off" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--green-bright);font-family:'Share Tech Mono',monospace;font-size:13px;padding:9px 12px;outline:none;border-radius:1px;box-sizing:border-box;margin-bottom:10px;">
+    <div style="font-size:10px;color:var(--dim);letter-spacing:0.08em;margin-bottom:5px;">PASSWORD</div>
+    <input type="password" id="lm-pw" placeholder="password" autocomplete="off" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--green-bright);font-family:'Share Tech Mono',monospace;font-size:13px;padding:9px 12px;outline:none;border-radius:1px;box-sizing:border-box;margin-bottom:0;">
+    <div id="lm-err" style="font-size:11px;color:var(--red);min-height:16px;margin-top:6px;"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="btn-sm" onclick="closeLM()" style="flex:1;">CANCEL</button>
+      <button class="btn-sm" onclick="submitLM()" style="flex:1;border-color:var(--green-dim);color:var(--green);">LOGIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-bg" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="cmsg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="cyes" id="confirm-yes">YES</button>
+      <button class="cno" onclick="confirmNo()">NO</button>
+    </div>
+  </div>
+</div>
+
+<!-- Splash -->
+<div class="splash" id="splash">
+  <div class="splash-title" id="splash-title">REBOOTING SRV</div>
+  <div class="splash-count" id="splash-count">40</div>
+  <div class="splash-status" id="splash-status"></div>
+  <div class="splash-bar-track"><div class="splash-bar" id="splash-bar" style="width:100%"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const API='';
+
+function $(id){ return document.getElementById(id); }
+function toast(msg,err=false){
+  const el=$('toast');
+  el.textContent=(err?'✗ ':'✓ ')+msg;
+  el.className='toast show'+(err?' error':'');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.className='toast',3000);
+}
+async function api(path,method='GET',body=null){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  return (await fetch(API+path,opts)).json();
+}
+
+async function refreshStatus(){
+  try{
+    const d=await api('/api/status');
+    $('sku-big').textContent=d.current_sku;
+    $('header-sku').textContent=d.current_sku;
+    $('printer-ip').textContent = d.printer_mode === 'usb' ? d.usb_device : d.printer_ip;
+    // Sync mode buttons
+    if(d.printer_mode) applyMode(d.printer_mode, false);
+    if(d.printer_ip)  { const el=$('cfg-ip');   if(el&&!el.value) el.value=d.printer_ip; }
+    if(d.printer_port){ const el=$('cfg-port');  if(el&&!el.value) el.value=d.printer_port; }
+    if(d.usb_device)  { const el=$('cfg-usb-dev'); if(el&&!el.value) el.value=d.usb_device; }
+    const dot=$('printer-dot'), st=$('printer-status');
+    if(d.printer_online){
+      dot.className='status-dot online'; st.textContent='PRINTER ONLINE'; st.style.color='var(--green)';
+    } else {
+      dot.className='status-dot offline'; st.textContent='PRINTER OFFLINE'; st.style.color='var(--red)';
+    }
+  }catch(e){}
+}
+
+async function refreshLog(){
+  try{
+    const d=await api('/api/log');
+    const box=$('log-box');
+    if(!d.lines.length){ box.innerHTML='<span style="color:var(--dim)">NO ENTRIES YET</span>'; return; }
+    box.innerHTML=d.lines.map(l=>{
+      const p=l.split(' — ');
+      if(p.length>=3) return `<div class="log-line"><span class="ts">${p[0]}</span> — SKU <span class="sku-n">${p[1].replace('SKU ','')}</span> — <span>${p[2]}</span></div>`;
+      return `<div class="log-line">${l}</div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function printNext(){
+  const d=await api('/api/print/next','POST');
+  if(d.ok){ toast(`SKU ${d.sku} printed — next: ${d.next}`); refreshStatus(); refreshLog(); }
+  else toast(d.error||'Print failed',true);
+}
+async function printReprint(){
+  const d=await api('/api/print/reprint','POST');
+  if(d.ok){ toast(`SKU ${d.sku} reprinted`); refreshLog(); }
+  else toast(d.error||'Reprint failed',true);
+}
+async function printBlank(){
+  const d=await api('/api/print/blank','POST');
+  d.ok?toast('Blank label sent'):toast(d.error||'Failed',true);
+}
+async function printCustom(){
+  const sku=$('custom-sku').value.trim(), text=$('custom-text').value.trim();
+  if(!sku){ toast('SKU required',true); return; }
+  const d=await api('/api/print/custom','POST',{sku,text});
+  if(d.ok){ toast(`Custom label: SKU ${d.sku}`); refreshLog(); }
+  else toast(d.error||'Failed',true);
+}
+async function printBatch(){
+  const start=parseInt($('batch-start').value), end=parseInt($('batch-end').value);
+  if(!start||!end){ toast('Start and End SKU required',true); return; }
+  if(start>end){ toast('Start must be lower than End',true); return; }
+  const count=end-start+1;
+  const prog=$('batch-prog'); prog.textContent=`PRINTING ${count} LABELS...`;
+  const d=await api('/api/print/batch','POST',{start,count});
+  prog.textContent=`DONE — ${d.printed} of ${count} printed`;
+  toast(`Batch: ${d.printed} labels`); refreshStatus(); refreshLog();
+}
+let _printerMode = 'network';
+
+function applyMode(mode, save=true) {
+  _printerMode = mode;
+  const nb = $('mode-network'), ub = $('mode-usb');
+  const nf = $('cfg-network-fields'), uf = $('cfg-usb-fields');
+  if(nb) { nb.style.background = mode==='network' ? 'var(--green-dim)' : 'transparent'; nb.style.color = mode==='network' ? 'var(--green)' : 'var(--dim)'; }
+  if(ub) { ub.style.background = mode==='usb'     ? 'var(--green-dim)' : 'transparent'; ub.style.color = mode==='usb'     ? 'var(--green)' : 'var(--dim)'; }
+  if(nf) nf.style.display = mode==='network' ? '' : 'none';
+  if(uf) uf.style.display = mode==='usb'     ? '' : 'none';
+}
+
+function setMode(mode) { applyMode(mode); }
+
+async function saveConfig(){
+  const body = { mode: _printerMode };
+  if(_printerMode === 'network') {
+    const ip = $('cfg-ip').value.trim();
+    const port = $('cfg-port').value.trim();
+    if(!ip){ toast('Enter printer IP',true); return; }
+    body.printer_ip = ip;
+    if(port) body.printer_port = parseInt(port);
+  } else {
+    const dev = $('cfg-usb-dev').value.trim();
+    if(!dev){ toast('Enter USB device path',true); return; }
+    body.usb_device = dev;
+  }
+  const d = await api('/api/config','POST', body);
+  if(d.ok){ toast('Printer config saved'); refreshStatus(); }
+  else toast(d.error||'Failed',true);
+}
+async function setSKU(){
+  const sku=$('cfg-sku').value; if(!sku){ toast('Enter SKU',true); return; }
+  const d=await api('/api/config','POST',{sku:parseInt(sku)});
+  if(d.ok){ toast(`SKU counter → ${sku}`); refreshStatus(); }
+}
+async function resetSKU(){
+  const d=await api('/api/config','POST',{sku:2000});
+  if(d.ok){ toast('SKU counter reset to 2000'); refreshStatus(); }
+}
+async function restartTracker(){
+  const r=await fetch('/api/system/service/pil0t-tracker/restart',{method:'POST',headers:{'Content-Type':'application/json'}});
+  const j=await r.json();
+  j.ok?toast('Print script restarted'):toast(j.error||'Failed',true);
+}
+async function rebootPi(){ await fetch('/api/system/reboot',{method:'POST',headers:{'Content-Type':'application/json'}}); showSplash(false); }
+async function shutdownPi(){ await fetch('/api/system/shutdown',{method:'POST',headers:{'Content-Type':'application/json'}}); showSplash(true); }
+
+// Confirm
+let _cb=null;
+function confirmAction(msg,cb){ _cb=cb; $('confirm-msg').textContent=msg; $('confirm-modal').classList.add('show'); $('confirm-yes').onclick=confirmYes; }
+function confirmYes(){ $('confirm-modal').classList.remove('show'); if(_cb){_cb();_cb=null;} }
+function confirmNo(){ $('confirm-modal').classList.remove('show'); _cb=null; }
+
+// Splash
+const QUOTES=['Powering down systems...','Telling services to wrap it up...','Cleaning up...','Going to sleep...','Lights out.'];
+function showSplash(isShutdown){
+  const s=$('splash'); s.classList.add('show');
+  $('splash-title').textContent=isShutdown?'SHUTTING DOWN':'REBOOTING SRV';
+  if(isShutdown){
+    let qi=0; $('splash-status').textContent=QUOTES[0]; $('splash-count').textContent=''; $('splash-bar').style.width='100%';
+    const t=setInterval(()=>{
+      qi++; if(qi<QUOTES.length){ $('splash-status').textContent=QUOTES[qi]; $('splash-bar').style.width=((1-qi/QUOTES.length)*100)+'%'; }
+      else{ clearInterval(t); $('splash-status').textContent='System offline.'; $('splash-title').textContent='SYSTEM OFFLINE'; $('splash-bar').style.width='0%'; }
+    },2000); return;
+  }
+  let rem=40; $('splash-count').textContent=rem; $('splash-bar').style.width='100%';
+  $('splash-status').textContent='Waiting for '+(window._hostname||location.hostname)+'...';
+  const tick=setInterval(()=>{
+    rem--; $('splash-count').textContent=Math.max(rem,0); $('splash-bar').style.width=(rem/40*100)+'%';
+    if(rem<=0){ clearInterval(tick); $('splash-count').textContent=''; $('splash-status').textContent='Reconnecting...'; tryReconnect(); }
+  },1000);
+}
+function tryReconnect(){
+  let a=0;
+  const iv=setInterval(async()=>{
+    a++; $('splash-status').textContent='Reconnecting... attempt '+a;
+    try{
+      const r=await fetch('/api/status',{signal:AbortSignal.timeout(3000)});
+      if(r.ok){ clearInterval(iv); $('splash-status').textContent='Back online! Reloading...'; setTimeout(()=>location.reload(),800); }
+    }catch(e){}
+  },2000);
+}
+
+// Branding
+fetch('/api/branding').then(r=>r.json()).then(d=>{
+  if(!d.ok) return;
+  const logo=$('header-logo'), sub=$('header-sub');
+  if(logo&&d.title) logo.childNodes[0].textContent=d.title+' ';
+  if(sub&&d.subtitle) sub.textContent=d.subtitle;
+  if(d.title) document.title='PiL0t — '+d.title;
+}).catch(()=>{});
+
+fetch('/api/system/info').then(r=>r.json()).then(d=>{if(d.hostname)window._hostname=d.hostname;}).catch(()=>{});
+
+// ── Auth guard ────────────────────────────────────────────────────────────────
+let _pendingAction = null;
+let _isLoggedIn = false;
+
+fetch('/api/auth/me').then(r=>r.json()).then(d=>{ _isLoggedIn=d.ok; }).catch(()=>{});
+
+function authGuard(fn) {
+  if(_isLoggedIn){ fn(); return; }
+  _pendingAction = fn;
+  document.getElementById('lm-user').value='';
+  document.getElementById('lm-pw').value='';
+  document.getElementById('lm-err').textContent='';
+  document.getElementById('login-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('lm-user').focus(),50);
+}
+
+function closeLM() {
+  document.getElementById('login-modal').classList.remove('show');
+  _pendingAction=null;
+}
+
+async function submitLM() {
+  const u=document.getElementById('lm-user').value.trim();
+  const p=document.getElementById('lm-pw').value;
+  const err=document.getElementById('lm-err');
+  if(!u||!p){err.textContent='Username and password required';return;}
+  err.textContent='';
+  try{
+    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json();
+    if(d.ok){
+      _isLoggedIn=true;
+      document.getElementById('login-modal').classList.remove('show');
+      if(_pendingAction){ const fn=_pendingAction; _pendingAction=null; fn(); }
+    } else {
+      err.textContent=d.error||'Login failed';
+      document.getElementById('lm-pw').value='';
+    }
+  }catch(e){err.textContent='Connection error';}
+}
+
+document.getElementById('lm-pw').addEventListener('keydown',function(e){if(e.key==='Enter')submitLM();});
+document.getElementById('lm-user').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('lm-pw').focus();});
+
+// Check device config — hide content if not in zebra mode
+fetch('/api/device/config').then(r=>r.json()).then(d=>{
+  if(d.zebra_mode !== false){
+    document.getElementById('main-content').style.display='';
+  }
+  // Non-zebra mode: leave blank until further items are added
+}).catch(()=>{
+  // If API fails just show content
+  document.getElementById('main-content').style.display='';
+});
+
+refreshStatus(); refreshLog();
+setInterval(refreshStatus,10000);
+setInterval(refreshLog,15000);
+</script>
+</body>
+</html>
