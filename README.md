@@ -1,6 +1,6 @@
 # PiL0t
 
-> A lightweight Raspberry Pi management console and ZPL label print server — built for Pi hardware, not against it.
+> A lightweight Raspberry Pi management console and ZPL label print server, built for Pi hardware, not against it.Heavily inspired by Webmin but made for underpowered hardware that could otherwise be upcycled into usable projects. 
 
 ---
 
