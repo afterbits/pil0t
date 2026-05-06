@@ -55,8 +55,12 @@ Think of it as the tool you wished existed when you plugged a Zebra printer into
 SSH into your Pi and run:
 
 ```bash
-git clone https://github.com/MrRobbles/PiL0t.git /tmp/pil0t
-sudo bash /tmp/pil0t/install.sh
+curl -L https://raw.githubusercontent.com/afterbits/pil0t/main/releases/pil0t-latest.tar.gz | tar -xz -C /tmp && sudo bash /tmp/pil0t/install.sh
+```
+OR, for those of you typing. The more convient shorted URL.
+
+```bash
+curl -L https://bit.ly/4dbLv6M | tar -xz -C /tmp && sudo bash /tmp/pil0t/install.sh
 ```
 
 That is it. The installer handles everything including dependencies, directory structure, systemd services, sudoers configuration, and default config files. On a Pi 3B+ with a reasonable SD card it takes about 90 seconds.
